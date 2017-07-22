@@ -1,0 +1,16 @@
+LIBRARY PEGASUS_X64
+
+EXPORTS
+	WinDbgExtensionDllInit
+	ExtensionApiVersion
+	CheckVersion
+
+	attach
+	trace
+	swch
+
+	mov
+	regs
+
+	link
+	check

@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="interface.h" />
+    <ClInclude Include="..\include\distorm\src\config.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\decoder.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\instructions.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\insts.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\operands.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\prefix.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\textdefs.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\wstring.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\x86defs.h">
+      <Filter>distorn</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="windbg_linker.cpp" />
+    <ClCompile Include="..\include\distorm\src\decoder.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\distorm.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\instructions.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\insts.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\mnemonics.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\operands.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\prefix.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\textdefs.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\wstring.c">
+      <Filter>distorn</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator.cpp" />
+    <ClCompile Include="emulator_x64.cpp" />
+    <ClCompile Include="emulator_x86.cpp" />
+    <ClCompile Include="test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="pegasus.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="distorn">
+      <UniqueIdentifier>{dcc9305e-ab3f-4c1d-80df-4d5a1303b85d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

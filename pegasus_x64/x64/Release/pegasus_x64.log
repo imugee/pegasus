@@ -1,0 +1,21 @@
+﻿  decoder.c
+  distorm.c
+  instructions.c
+  insts.c
+  mnemonics.c
+  operands.c
+  prefix.c
+  textdefs.c
+  wstring.c
+  main.cpp
+  test.cpp
+  windbg_linker.cpp
+  emulator.cpp
+  emulator_x64.cpp
+  emulator_x86.cpp
+     C:\Users\su\Desktop\새 폴더\pegasus\x64\Release\pegasus_x64.lib 라이브러리 및 C:\Users\su\Desktop\새 폴더\pegasus\x64\Release\pegasus_x64.exp 개체를 생성하고 있습니다.
+  코드를 생성하고 있습니다.
+  All 228 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  코드를 생성했습니다.
+  pegasus_x64.vcxproj -> C:\Users\su\Desktop\새 폴더\pegasus\x64\Release\pegasus_x64.dll
+  pegasus_x64.vcxproj -> C:\Users\su\Desktop\새 폴더\pegasus\x64\Release\pegasus_x64.pdb (Full PDB)

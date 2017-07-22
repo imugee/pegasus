@@ -1,6 +1,6 @@
 Pegasus - Windbg emulation plugin
 ==============
-[![Page](https://img.shields.io/badge/Page-http://0a777h.blogspot.kr/2017/07/11_20.html-brightgreen.svg)](http://0a777h.blogspot.kr/2017/07/11_20.html)
+[![Release](https://img.shields.io/badge/Release-http://0a777h.blogspot.kr/2017/07/11_20.html-brightgreen.svg)](http://0a777h.blogspot.kr/2017/07/11_20.html)
 [![Video](https://img.shields.io/badge/Video-goo.gl/TBNaHf-lightgrey.svg)](https://goo.gl/TBNaHf)
 [![email](https://img.shields.io/badge/email-0a777h@gmail.com-blue.svg)](0a777h@gmail.com)
 
@@ -46,5 +46,5 @@ eip=00f4104b esp=007bf8f4 ebp=007bf938
 ...
 00000000`00f4104b 681c21f400      push    offset test!`string' (00000000`00f4211c)
 
-...
+etc.
 </pre>
