@@ -1,12 +1,16 @@
 Pegasus - Windbg emulation plugin
 ==============
-[![Release](https://img.shields.io/badge/Release-http://0a777h.blogspot.kr/2017/07/11_20.html-brightgreen.svg)](http://0a777h.blogspot.kr/2017/07/11_20.html)
-[![Video](https://img.shields.io/badge/Video-goo.gl/TBNaHf-lightgrey.svg)](https://goo.gl/TBNaHf)
+[![Release](https://img.shields.io/badge/Release-http://0a777h.blogspot.kr/2017/07/11_20.html-green.svg)](http://0a777h.blogspot.kr/2017/07/11_20.html)
 [![email](https://img.shields.io/badge/email-0a777h@gmail.com-blue.svg)](0a777h@gmail.com)
+![Version](https://img.shields.io/badge/Version-Prototype-lightgrey.svg)
 
-Version
+![Support](https://img.shields.io/badge/Support-LiveDebugging-brightgreen.svg)
+![Support](https://img.shields.io/badge/Support-FullDump-brightgreen.svg)
+![Support](https://img.shields.io/badge/ComingSoon-CompleteMemoryDump-lightgrey.svg)
+
+Video
 -------
-Prototype-version
+https://goo.gl/TBNaHf
 
 Commands
 -------
@@ -47,4 +51,15 @@ eip=00f4104b esp=007bf8f4 ebp=007bf938
 00000000`00f4104b 681c21f400      push    offset test!`string' (00000000`00f4211c)
 
 etc.
+</pre>
+
+Test
+-------
+<pre>
+0:000> .load pegasus_x64.dll
+0:000> !wow64exts.sw
+0:000> !attach
+0:000> !trace
+0:000> !regs
+0:000> !trace -r [address]
 </pre>
