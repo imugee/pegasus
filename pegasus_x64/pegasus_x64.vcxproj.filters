@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="test.cpp" />
+    <ClCompile Include="windbg_linker.cpp" />
+    <ClCompile Include="emulator.cpp" />
+    <ClCompile Include="emulator_x64.cpp" />
+    <ClCompile Include="emulator_x86.cpp" />
+    <ClCompile Include="..\include\distorm\src\decoder.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\distorm.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\instructions.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\insts.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\mnemonics.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\operands.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\prefix.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\wstring.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\distorm\src\textdefs.c">
+      <Filter>distorm</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="interface.h" />
+    <ClInclude Include="..\include\distorm\src\config.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\decoder.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\instructions.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\insts.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\operands.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\prefix.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\wstring.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\x86defs.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\distorm\src\textdefs.h">
+      <Filter>distorm</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="pegasus.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="distorm">
+      <UniqueIdentifier>{e7511649-3825-4f11-ae9d-ef26a66b9420}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
