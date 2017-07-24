@@ -245,7 +245,23 @@ bool __stdcall Wow64EmulationDebugger::create_global_descriptor_table(void *engi
 ///
 bool __stdcall Wow64EmulationDebugger::disasm(void *code, size_t size, uint32_t dt, void *out)
 {
-	return false;
+	unsigned int dc;
+	_CodeInfo ci;
+	_DInst *di = (_DInst *)out;
+
+	ci.code = (unsigned char *)code;
+	ci.codeLen = (int)size;
+	ci.codeOffset = (_OffsetType)(unsigned long long *)code;
+	ci.dt = (_DecodeType)dt;
+	ci.features = DF_NONE;
+
+	if (distorm_decompose(&ci, di, 1, &dc) == DECRES_INPUTERR)
+		return false;
+
+	if (dc < 1)
+		return false;
+
+	return true;
 }
 ///
 ///
