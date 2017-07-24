@@ -3,6 +3,8 @@
 #include <WDBGEXTS.H>
 
 #include "interface.h"
+#include "windbg_linker.h"
+#include "emulator.h"
 ///
 /// global
 ///

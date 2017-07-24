@@ -12,6 +12,8 @@
 #include <WDBGEXTS.H>
 
 #include "interface.h"
+#include "windbg_linker.h"
+#include "emulator.h"
 
 #pragma comment(lib, "unicorn_static_x64.lib")
 ///

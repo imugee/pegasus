@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "interface.h"
+#include "windbg_linker.h"
 
 #pragma comment(lib, "dbgeng.lib")
 

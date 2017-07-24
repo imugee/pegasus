@@ -159,7 +159,9 @@
     <ClInclude Include="..\include\distorm\src\textdefs.h" />
     <ClInclude Include="..\include\distorm\src\wstring.h" />
     <ClInclude Include="..\include\distorm\src\x86defs.h" />
+    <ClInclude Include="emulator.h" />
     <ClInclude Include="interface.h" />
+    <ClInclude Include="windbg_linker.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\include\distorm\src\decoder.c" />

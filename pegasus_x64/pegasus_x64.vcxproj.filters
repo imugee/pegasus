@@ -3,10 +3,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="test.cpp" />
-    <ClCompile Include="windbg_linker.cpp" />
-    <ClCompile Include="emulator.cpp" />
-    <ClCompile Include="emulator_x64.cpp" />
-    <ClCompile Include="emulator_x86.cpp" />
     <ClCompile Include="..\include\distorm\src\decoder.c">
       <Filter>distorm</Filter>
     </ClCompile>
@@ -33,6 +29,18 @@
     </ClCompile>
     <ClCompile Include="..\include\distorm\src\textdefs.c">
       <Filter>distorm</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator_x86.cpp">
+      <Filter>emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator.cpp">
+      <Filter>emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator_x64.cpp">
+      <Filter>emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="windbg_linker.cpp">
+      <Filter>windbg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +72,12 @@
     <ClInclude Include="..\include\distorm\src\textdefs.h">
       <Filter>distorm</Filter>
     </ClInclude>
+    <ClInclude Include="emulator.h">
+      <Filter>emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="windbg_linker.h">
+      <Filter>windbg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="pegasus.def" />
@@ -71,6 +85,12 @@
   <ItemGroup>
     <Filter Include="distorm">
       <UniqueIdentifier>{e7511649-3825-4f11-ae9d-ef26a66b9420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="emulator">
+      <UniqueIdentifier>{af7388aa-da63-484e-8fa5-25575c0b2e5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="windbg">
+      <UniqueIdentifier>{1a45341e-8188-4913-867b-6815754478d8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
