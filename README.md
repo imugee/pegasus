@@ -6,7 +6,7 @@ Pegasus - Windbg emulation plugin
 ![Version](https://img.shields.io/badge/Version-Prototype-lightgrey.svg)
 ![Support](https://img.shields.io/badge/Support-LiveDebugging-brightgreen.svg)
 ![Support](https://img.shields.io/badge/Support-FullDump-brightgreen.svg)
-![Support](https://img.shields.io/badge/Support-CompleteMemoryDump-red.svg)
+![Support](https://img.shields.io/badge/Support-CompleteMemoryDump-lightgrey.svg)
 
 Video
 -------
