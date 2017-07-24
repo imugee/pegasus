@@ -6,7 +6,11 @@ Pegasus - Windbg emulation plugin
 
 Version
 -------
-Prototype-version
+Prototype
+
+Video
+-------
+https://goo.gl/TBNaHf
 
 Commands
 -------
@@ -47,4 +51,15 @@ eip=00f4104b esp=007bf8f4 ebp=007bf938
 00000000`00f4104b 681c21f400      push    offset test!`string' (00000000`00f4211c)
 
 etc.
+</pre>
+
+Test
+-------
+<pre>
+0:000> .load pegasus_x64.dll
+0:000> !wow64exts.sw
+0:000> !attach
+0:000> !trace
+0:000> !regs
+0:000> !trace -r [address]
 </pre>
