@@ -90,7 +90,6 @@ namespace binary
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
 	};
 
-	template <class T> bool __stdcall create(void **u);
 	template <typename T1, class T2> bool __stdcall create(std::shared_ptr<T2> &u);
 }
 ///
