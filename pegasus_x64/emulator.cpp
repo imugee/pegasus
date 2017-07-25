@@ -271,12 +271,7 @@ bool __stdcall Wow64EmulationDebugger::check(unsigned long long address)
 
 bool __stdcall Wow64EmulationDebugger::read(unsigned long long address, void *dump, size_t dump_size)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
