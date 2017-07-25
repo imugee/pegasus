@@ -45,14 +45,20 @@ public:
 	~Wow64EmulationDebugger();
 
 	virtual bool __stdcall is_64();
+	
 	virtual bool __stdcall check(unsigned long long address);
 	virtual bool __stdcall link(unsigned long long address);
 	virtual bool __stdcall load(unsigned long long load_address, size_t load_size, void *dump, size_t write_size);
 
 	virtual bool __stdcall read(unsigned long long address, void *dump, size_t dump_size);
 	virtual bool __stdcall write(unsigned long long address, void *dump, size_t dump_size);
+	
+	virtual bool __stdcall read_register(unsigned int id, unsigned long long *value);
+	virtual bool __stdcall write_register(unsigned int id, unsigned long long value);
+	
 	virtual bool __stdcall read_register(char *mask, unsigned long long *value);
 	virtual bool __stdcall write_register(char *mask, unsigned long long value);
+	
 	virtual bool __stdcall read_context(void *context, size_t context_size);
 
 	virtual bool __stdcall attach();
