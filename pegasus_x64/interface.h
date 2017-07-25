@@ -96,31 +96,21 @@ namespace binary
 ///
 ///
 ///
-template <class T> 
-bool __stdcall binary::create(void **u)
+template <typename T1, class T2>
+bool __stdcall binary::create(std::shared_ptr<T2> &u)
 {
 	try
 	{
-		T *obj = new T;
-		*u = obj;
+		void *o = nullptr;
+		T1 *t = new T1;
+
+		o = t;
+		u.reset(static_cast<T2 *>(o));
 	}
 	catch (...)
 	{
 		return false;
 	}
-
-	return true;
-}
-
-template <typename T1, class T2> 
-bool __stdcall binary::create(std::shared_ptr<T2> &u)
-{
-	void *o = nullptr;
-
-	if (!create<T1>(&o))
-		return false;
-
-	u.reset(static_cast<T2 *>(o));
 
 	return true;
 }
