@@ -249,7 +249,8 @@ bool __stdcall Wow64EmulationDebugger::read_context_x64(CONTEXT *context)
 
 	if (uc_reg_read(uc, UC_X86_REG_RAX, &context->Rax) != 0 || uc_reg_read(uc, UC_X86_REG_RBX, &context->Rbx) != 0 || uc_reg_read(uc, UC_X86_REG_RCX, &context->Rcx) != 0
 		|| uc_reg_read(uc, UC_X86_REG_RDX, &context->Rdx) != 0 || uc_reg_read(uc, UC_X86_REG_RDI, &context->Rdi) != 0 || uc_reg_read(uc, UC_X86_REG_RSI, &context->Rsi) != 0
-		|| uc_reg_read(uc, UC_X86_REG_RSP, &context->Rsp) != 0 || uc_reg_read(uc, UC_X86_REG_RBP, &context->Rbp) != 0 || uc_reg_read(uc, UC_X86_REG_RIP, &context->Rip) != 0)
+		|| uc_reg_read(uc, UC_X86_REG_RSP, &context->Rsp) != 0 || uc_reg_read(uc, UC_X86_REG_RBP, &context->Rbp) != 0 || uc_reg_read(uc, UC_X86_REG_RIP, &context->Rip) != 0
+		|| uc_reg_read(uc, UC_X86_REG_EFLAGS, &context->EFlags) != 0)
 		return false;
 
 	if (uc_reg_read(uc, UC_X86_REG_R8, &context->R8) != 0 || uc_reg_read(uc, UC_X86_REG_R9, &context->R9) != 0 || uc_reg_read(uc, UC_X86_REG_R10, &context->R10) != 0
@@ -314,18 +315,19 @@ bool __stdcall Wow64EmulationDebugger::switch_x64()
 	if (!read_context_x86(&context))
 		return false;
 
+	context.SegCs = 0x33;
 	if (!create_global_descriptor_table(uc_x64, &context, sizeof(context)))
 		return false;
 	///
 	///
 	///
-	unsigned long cs_64 = 0x33;
 	if (uc_reg_write(uc_x64, UC_X86_REG_RAX, &context.Rax) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RBX, &context.Rbx) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RCX, &context.Rcx) != 0
 		|| uc_reg_write(uc_x64, UC_X86_REG_RDX, &context.Rdx) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RDI, &context.Rdi) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RSI, &context.Rsi) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_RSP, &context.Rsp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RBP, &context.Rbp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RIP, &context.Rip) != 0)
+		|| uc_reg_write(uc_x64, UC_X86_REG_RSP, &context.Rsp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RBP, &context.Rbp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RIP, &context.Rip) != 0
+		|| uc_reg_write(uc_x64, UC_X86_REG_EFLAGS, &context.EFlags) != 0)
 		return false;
 
-	if (uc_reg_write(uc_x64, UC_X86_REG_CS, &cs_64) != 0 || uc_reg_write(uc_x64, UC_X86_REG_DS, &context.SegDs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_ES, &context.SegEs) != 0
+	if (uc_reg_write(uc_x64, UC_X86_REG_CS, &context.SegCs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_DS, &context.SegDs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_ES, &context.SegEs) != 0
 		|| uc_reg_write(uc_x64, UC_X86_REG_FS, &context.SegFs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_GS, &context.SegGs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_SS, &context.SegSs) != 0)
 		return false;
 	///

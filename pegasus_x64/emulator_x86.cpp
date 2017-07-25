@@ -134,32 +134,6 @@ bool __stdcall Wow64EmulationDebugger::attach_x86()
 	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_EFLAGS, &context.EFlags) != 0)
 		return false;
 	///
-	/// x64
-	///
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R8, &context.R8) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R9, &context.R9) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R10, &context.R10) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R11, &context.R11) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R12, &context.R12) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R13, &context.R13) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R14, &context.R14) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R15, &context.R15) != 0)
-		return false;
-	///
 	/// segment
 	///
 	if(uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_CS, &context.SegCs) != 0)
@@ -242,12 +216,8 @@ bool __stdcall Wow64EmulationDebugger::read_context_x86(CONTEXT *context)
 
 	if (uc_reg_read(uc, UC_X86_REG_EAX, &context->Rax) != 0 || uc_reg_read(uc, UC_X86_REG_EBX, &context->Rbx) != 0 || uc_reg_read(uc, UC_X86_REG_ECX, &context->Rcx) != 0
 		|| uc_reg_read(uc, UC_X86_REG_EDX, &context->Rdx) != 0 || uc_reg_read(uc, UC_X86_REG_EDI, &context->Rdi) != 0 || uc_reg_read(uc, UC_X86_REG_ESI, &context->Rsi) != 0
-		|| uc_reg_read(uc, UC_X86_REG_ESP, &context->Rsp) != 0 || uc_reg_read(uc, UC_X86_REG_EBP, &context->Rbp) != 0 || uc_reg_read(uc, UC_X86_REG_EIP, &context->Rip) != 0)
-		return false;
-
-	if (uc_reg_read(uc, UC_X86_REG_R8, &context->R8) != 0 || uc_reg_read(uc, UC_X86_REG_R9, &context->R9) != 0 || uc_reg_read(uc, UC_X86_REG_R10, &context->R10) != 0
-		|| uc_reg_read(uc, UC_X86_REG_R11, &context->R11) != 0 || uc_reg_read(uc, UC_X86_REG_R12, &context->R12) != 0 || uc_reg_read(uc, UC_X86_REG_R13, &context->R13) != 0
-		|| uc_reg_read(uc, UC_X86_REG_R14, &context->R14) != 0 || uc_reg_read(uc, UC_X86_REG_R15, &context->R15) != 0)
+		|| uc_reg_read(uc, UC_X86_REG_ESP, &context->Rsp) != 0 || uc_reg_read(uc, UC_X86_REG_EBP, &context->Rbp) != 0 || uc_reg_read(uc, UC_X86_REG_EIP, &context->Rip) != 0
+		|| uc_reg_read(uc, UC_X86_REG_EFLAGS, &context->EFlags) != 0)
 		return false;
 
 	if (uc_reg_read(uc, UC_X86_REG_CS, &context->SegCs) != 0 || uc_reg_read(uc, UC_X86_REG_DS, &context->SegDs) != 0 || uc_reg_read(uc, UC_X86_REG_ES, &context->SegEs) != 0
@@ -307,6 +277,7 @@ bool __stdcall Wow64EmulationDebugger::switch_x86()
 	if (!read_context_x64(&context))
 		return false;
 
+	context.SegCs = 0x23;
 	if (!create_global_descriptor_table(uc_x86, &context, sizeof(context)))
 		return false;
 	///
@@ -314,15 +285,10 @@ bool __stdcall Wow64EmulationDebugger::switch_x86()
 	///
 	if (uc_reg_write(uc_x86, UC_X86_REG_EAX, &context.Rax) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EBX, &context.Rbx) != 0 || uc_reg_write(uc_x86, UC_X86_REG_ECX, &context.Rcx) != 0
 		|| uc_reg_write(uc_x86, UC_X86_REG_EDX, &context.Rdx) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EDI, &context.Rdi) != 0 || uc_reg_write(uc_x86, UC_X86_REG_ESI, &context.Rsi) != 0
-		|| uc_reg_write(uc_x86, UC_X86_REG_ESP, &context.Rsp) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EBP, &context.Rbp) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EIP, &context.Rip) != 0)
+		|| uc_reg_write(uc_x86, UC_X86_REG_ESP, &context.Rsp) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EBP, &context.Rbp) != 0 || uc_reg_write(uc_x86, UC_X86_REG_EIP, &context.Rip) != 0
+		|| uc_reg_write(uc_x86, UC_X86_REG_EFLAGS, &context.EFlags) != 0)
 		return false;
 
-	if (uc_reg_write(uc_x86, UC_X86_REG_R8, &context.R8) != 0 || uc_reg_write(uc_x86, UC_X86_REG_R9, &context.R9) != 0 || uc_reg_write(uc_x86, UC_X86_REG_R10, &context.R10) != 0
-		|| uc_reg_write(uc_x86, UC_X86_REG_R11, &context.R11) != 0 || uc_reg_write(uc_x86, UC_X86_REG_R12, &context.R12) != 0 || uc_reg_write(uc_x86, UC_X86_REG_R13, &context.R13) != 0
-		|| uc_reg_write(uc_x86, UC_X86_REG_R14, &context.R14) != 0 || uc_reg_write(uc_x86, UC_X86_REG_R15, &context.R15) != 0)
-		return false;
-
-	unsigned long cs_86 = 0x33;
 	if (uc_reg_write(uc_x86, UC_X86_REG_CS, &context.SegCs) != 0 || uc_reg_write(uc_x86, UC_X86_REG_DS, &context.SegDs) != 0 || uc_reg_write(uc_x86, UC_X86_REG_ES, &context.SegEs) != 0
 		|| uc_reg_write(uc_x86, UC_X86_REG_FS, &context.SegFs) != 0 || uc_reg_write(uc_x86, UC_X86_REG_GS, &context.SegGs) != 0 || uc_reg_write(uc_x86, UC_X86_REG_SS, &context.SegSs) != 0)
 		return false;
