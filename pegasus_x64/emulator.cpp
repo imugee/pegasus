@@ -30,7 +30,7 @@ size_t __stdcall Wow64EmulationDebugger::alignment(size_t region_size, unsigned 
 {
 	size_t alignment = region_size;
 
-	while (1)
+	while (true)
 	{
 		if (alignment > image_aligin)
 			alignment -= image_aligin;
@@ -71,58 +71,40 @@ bool __stdcall Wow64EmulationDebugger::load_ex(std::shared_ptr<binary::linker> w
 	std::list<MEMORY_BASIC_INFORMATION64> memory_list;
 	uint64_t address = 0;
 	MEMORY_BASIC_INFORMATION64 mbi = { 0, };
-	unsigned int count_begin = 0;
-	unsigned int count_end = 0;
+	unsigned int count = 0;
 
-	do
+	while (windbg_linker->virtual_query(address, &mbi))
 	{
-		ZeroMemory(&mbi, sizeof(mbi));
-
-		if (windbg_linker->virtual_query(address, &mbi))
+		if (mbi.BaseAddress > address)
 		{
-			if (mbi.BaseAddress > address)
-			{
-				address = mbi.BaseAddress;
-				continue;
-			}
-
-			if (mbi.State == MEM_COMMIT)
-			{
-				memory_list.push_back(mbi);
-				++count_begin;
-			}
-
-			address += mbi.RegionSize;
+			address = mbi.BaseAddress;
+			continue;
 		}
-		else
-			break;
-	} while (true);
-	///
-	///
-	///
-	std::list<MEMORY_BASIC_INFORMATION64>::iterator it;
 
-	for (it = memory_list.begin(); it != memory_list.end(); ++it)
-	{
-		unsigned char *dump = (unsigned char *)malloc((size_t)it->RegionSize);
+		if (mbi.State == MEM_COMMIT)
+		{
+			unsigned char *dump = (unsigned char *)malloc((size_t)mbi.RegionSize);
 
-		if (!dump)
-			continue;
+			if (!dump)
+				continue;
 
-		std::shared_ptr<void> dump_closer(dump, free);
-		memset(dump, 0, (size_t)it->RegionSize);
-		unsigned long readn = 0;
+			memset(dump, 0, (size_t)mbi.RegionSize);
+			std::shared_ptr<void> dump_closer(dump, free);
 
-		if (!windbg_linker->read_memory(it->BaseAddress, dump, (size_t)it->RegionSize))
-			continue;
+			if (!windbg_linker->read_memory(mbi.BaseAddress, dump, (size_t)mbi.RegionSize))
+				continue;
 
-		if (!load((uint64_t)it->BaseAddress, (size_t)it->RegionSize, dump, (size_t)it->RegionSize))
-			continue;
+			if (!load((uint64_t)mbi.BaseAddress, (size_t)mbi.RegionSize, dump, (size_t)mbi.RegionSize))
+				continue;
 
-		++count_end;
+			++count;
+		}
+		
+		address += mbi.RegionSize;
+		memset(&mbi, 0, sizeof(mbi));
 	}
 
-	if (count_begin != count_end)
+	if (count == 0)
 		return false;
 
 	return true;
