@@ -26,6 +26,20 @@ Wow64EmulationDebugger::~Wow64EmulationDebugger()
 ///
 ///
 ///
+void * __stdcall Wow64EmulationDebugger::get_engine()
+{
+	void *engine = nullptr;
+
+	if (x64_flag_)
+		engine = emulator_x64_;
+	else
+		engine = emulator_x86_;
+
+	return engine;
+}
+///
+///
+///
 size_t __stdcall Wow64EmulationDebugger::alignment(size_t region_size, unsigned long image_aligin)
 {
 	size_t alignment = region_size;
@@ -45,13 +59,8 @@ size_t __stdcall Wow64EmulationDebugger::alignment(size_t region_size, unsigned 
 
 bool __stdcall Wow64EmulationDebugger::load(unsigned long long load_address, size_t load_size, void *dump, size_t write_size)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
-
+	void *engine = get_engine();
+	
 	if (!engine)
 		return false;
 
@@ -114,12 +123,7 @@ bool __stdcall Wow64EmulationDebugger::link(unsigned long long address)
 {
 	address += 0x10;
 	size_t resize = alignment((size_t)address, 0x1000);
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
@@ -252,18 +256,12 @@ bool __stdcall Wow64EmulationDebugger::disasm(void *code, size_t size, uint32_t 
 ///
 bool __stdcall Wow64EmulationDebugger::check(unsigned long long address)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
-
-	unsigned char dump[16];
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
 
+	unsigned char dump[16];
 	uc_engine *uc = (uc_engine *)engine;
 	if (uc_mem_read(uc, address, dump, sizeof(dump) != 0))
 		return false;
@@ -292,12 +290,7 @@ bool __stdcall Wow64EmulationDebugger::read(unsigned long long address, void *du
 
 bool __stdcall Wow64EmulationDebugger::write(unsigned long long address, void *dump, size_t dump_size)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
@@ -311,12 +304,7 @@ bool __stdcall Wow64EmulationDebugger::write(unsigned long long address, void *d
 
 bool __stdcall Wow64EmulationDebugger::read_register(unsigned int id, unsigned long long *value)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
@@ -330,12 +318,7 @@ bool __stdcall Wow64EmulationDebugger::read_register(unsigned int id, unsigned l
 
 bool __stdcall Wow64EmulationDebugger::write_register(unsigned int id, unsigned long long value)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
@@ -349,12 +332,7 @@ bool __stdcall Wow64EmulationDebugger::write_register(unsigned int id, unsigned 
 
 bool __stdcall Wow64EmulationDebugger::read_register(char *mask, unsigned long long *value)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
@@ -438,12 +416,7 @@ bool __stdcall Wow64EmulationDebugger::read_register(char *mask, unsigned long l
 
 bool __stdcall Wow64EmulationDebugger::write_register(char *mask, unsigned long long value)
 {
-	void *engine = nullptr;
-
-	if (x64_flag_)
-		engine = emulator_x64_;
-	else
-		engine = emulator_x86_;
+	void *engine = get_engine();
 
 	if (!engine)
 		return false;
