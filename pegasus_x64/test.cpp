@@ -30,6 +30,7 @@ bool __stdcall print_register()
 		dprintf("r8=%0*I64x r9=%0*I64x r10=%0*I64x\n", 16, context.R8, 16, context.R9, 16, context.R10);
 		dprintf("r11=%0*I64x r12=%0*I64x r13=%0*I64x\n", 16, context.R11, 16, context.R12, 16, context.R13);
 		dprintf("r14=%0*I64x r15=%0*I64x\n", 16, context.R14, 16, context.R15);
+		dprintf("efl=%0*I64x\n", 16, context.EFlags);
 		dprintf("CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d%d NT=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d\n"
 			, GetFlagBit(context.EFlags, CF_INDEX), GetFlagBit(context.EFlags, PF_INDEX)
 			, GetFlagBit(context.EFlags, AF_INDEX), GetFlagBit(context.EFlags, ZF_INDEX)
@@ -80,15 +81,10 @@ bool __stdcall attach_main(std::shared_ptr<binary::linker> windbg_linker, int ar
 	if (!binary::create<Wow64EmulationDebugger>(emulator))
 		return false;
 
-	if (!emulator->attach()) // wow64ext.sw 를 사용해야 context를 가져올 수 있다..
+	if (!emulator->attach())
 		return false;
 
 	print_register();
-	//if (!emulator->cpu_switch())
-	//	return false;
-
-	//if (!emulator->cpu_switch())
-	//	return false;
 
 	return true;
 }
