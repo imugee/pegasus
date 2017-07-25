@@ -309,6 +309,43 @@ bool __stdcall Wow64EmulationDebugger::write(unsigned long long address, void *d
 	return true;
 }
 
+bool __stdcall Wow64EmulationDebugger::read_register(unsigned int id, unsigned long long *value)
+{
+	void *engine = nullptr;
+
+	if (x64_flag_)
+		engine = emulator_x64_;
+	else
+		engine = emulator_x86_;
+
+	if (!engine)
+		return false;
+
+	uc_engine *uc = (uc_engine *)engine;
+	if (uc_reg_read(uc, id, value) != 0)
+		return false;
+
+	return true;
+}
+
+bool __stdcall Wow64EmulationDebugger::write_register(unsigned int id, unsigned long long value)
+{
+	void *engine = nullptr;
+
+	if (x64_flag_)
+		engine = emulator_x64_;
+	else
+		engine = emulator_x86_;
+
+	if (!engine)
+		return false;
+
+	uc_engine *uc = (uc_engine *)engine;
+	if (uc_reg_write(uc, id, &value) != 0)
+		return false;
+
+	return true;
+}
 
 bool __stdcall Wow64EmulationDebugger::read_register(char *mask, unsigned long long *value)
 {
