@@ -18,6 +18,7 @@ private:
 	unsigned int x64_flag_;
 
 private: // local&share
+	virtual void * __stdcall get_engine();
 	virtual void __stdcall set_global_descriptor(SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code);
 	virtual bool __stdcall create_global_descriptor_table(void *engine, void *context, size_t context_size);
 	virtual bool __stdcall load_ex(std::shared_ptr<binary::linker> windbg_linker);
