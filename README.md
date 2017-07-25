@@ -1,9 +1,9 @@
 Pegasus - Windbg emulation plugin
 ==============
-[![Release](https://img.shields.io/badge/Release-http://0a777h.blogspot.kr/2017/07/11_20.html-green.svg)](http://0a777h.blogspot.kr/2017/07/11_20.html)
-[![email](https://img.shields.io/badge/email-0a777h@gmail.com-blue.svg)](0a777h@gmail.com)
-![Version](https://img.shields.io/badge/Version-Prototype-lightgrey.svg)
+[![Engine](https://img.shields.io/badge/Engine-UnicornEngine-brightgreen.svg)](https://github.com/unicorn-engine/unicorn)
+[![Engine](https://img.shields.io/badge/Engine-Distorm-brightgreen.svg)](https://github.com/gdabah/distorm)
 
+![Version](https://img.shields.io/badge/Version-Prototype-lightgrey.svg)
 ![Support](https://img.shields.io/badge/Support-LiveDebugging-brightgreen.svg)
 ![Support](https://img.shields.io/badge/Support-FullDump-brightgreen.svg)
 ![Support](https://img.shields.io/badge/ComingSoon-CompleteMemoryDump-lightgrey.svg)
