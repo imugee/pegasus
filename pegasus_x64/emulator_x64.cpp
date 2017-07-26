@@ -142,11 +142,12 @@ bool __stdcall Wow64EmulationDebugger::mnemonic_mov_gs(unsigned long long ip)
 	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[1].type != O_DISP || di.size != 9 || di.disp != 0x30)
 		return false;
 
-	char *reg[16] = { "rax", "rcx" , "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"};
-	if(!write_register(reg[di.ops[0].index], teb_address_))
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+
+	if (!write_register(distorm_to_uc[di.ops[0].index], teb_address_))
 		return false;
 
-	if (!write_register("rip", ip + di.size))
+	if (!write_register(UC_X86_REG_EIP, ip + di.size))
 		return false;
 
 	return true;
@@ -166,10 +167,9 @@ bool __stdcall Wow64EmulationDebugger::mnemonic_mov_ss(unsigned long long ip)
 	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[0].index != R_SS || di.size != 3)
 		return false;
 
-	char *reg[48] = { "rax", "rcx" , "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
-		, "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
-		, "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };
-	if (!write_register(reg[di.ops[1].index], 0x88))
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+
+	if (!write_register(distorm_to_uc[di.ops[1].index], 0x88))
 		return false;
 
 	return true;
@@ -189,12 +189,10 @@ bool __stdcall Wow64EmulationDebugger::mnemonic_wow_ret(unsigned long long ip)
 	if (di.opcode != I_JMP_FAR || di.ops[0].type != O_SMEM || di.size != 3)
 		return false;
 
-	char *reg[48] = { "rax", "rcx" , "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
-		, "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
-		, "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
 
 	unsigned long long return_register = 0;
-	if (!read_register(reg[di.ops[0].index], &return_register))
+	if (!read_register(distorm_to_uc[di.ops[0].index], &return_register))
 		return false;
 
 	unsigned long value = 0;
@@ -204,7 +202,7 @@ bool __stdcall Wow64EmulationDebugger::mnemonic_wow_ret(unsigned long long ip)
 	if (!switch_x86())
 		return false;
 
-	if(!write_register("eip", value))
+	if(!write_register(UC_X86_REG_EIP, value))
 		return false;
 
 	return true;
