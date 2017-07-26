@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <uc\unicorn\unicorn.h>
 #include <Windows.h>
 #include <memory>
 #include <WDBGEXTS.H>
@@ -133,7 +136,7 @@ void __stdcall trace(HANDLE hCurrentProcess, HANDLE hCurrentThread, ULONG64 dwCu
 
 		while (true)
 		{
-			if (!emulator->read_register("eip", &eip))
+			if (!emulator->read_register(UC_X86_REG_EIP, &eip))
 				break;
 			if (eip == break_point)
 				break;
@@ -194,7 +197,7 @@ void __stdcall mov(HANDLE hCurrentProcess, HANDLE hCurrentThread, ULONG64 dwCurr
 	{
 		unsigned long long value = strtoll(args[1], &end, 16);
 		dprintf("mov   %s,%llx\n", args[0], value);
-		emulator->write_register(args[0], value);
+		//emulator->write_register(args[0], value);
 	}
 }
 ///
