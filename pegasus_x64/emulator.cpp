@@ -328,9 +328,9 @@ bool __stdcall Wow64EmulationDebugger::write_register(unsigned int id, unsigned 
 bool __stdcall Wow64EmulationDebugger::read_context(void *context, size_t context_size)
 {
 	if (x64_flag_)
-		return read_context_x64((CONTEXT *)context);
+		return read_x64_cpu_context((CONTEXT *)context);
 	
-	return read_context_x86((CONTEXT *)context);
+	return read_x86_cpu_context((CONTEXT *)context);
 }
 ///
 ///

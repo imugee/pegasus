@@ -49,80 +49,7 @@ bool __stdcall Wow64EmulationDebugger::attach_x64()
 	if (!create_global_descriptor_table(emulator_x64_, &context, sizeof(context)))
 		return false;
 
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RAX, &context.Rax) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RBX, &context.Rbx) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RCX, &context.Rcx) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RDX, &context.Rdx) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RSI, &context.Rsi) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RDI, &context.Rdi) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RSP, &context.Rsp) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RBP, &context.Rbp) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_RIP, &context.Rip) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_EFLAGS, &context.EFlags) != 0)
-		return false;
-	///
-	/// x64
-	///
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R8, &context.R8) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R9, &context.R9) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R10, &context.R10) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R11, &context.R11) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R12, &context.R12) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R13, &context.R13) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R14, &context.R14) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_R15, &context.R15) != 0)
-		return false;
-	///
-	/// segment
-	///
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_CS, &context.SegCs) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_SS, &context.SegSs) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_DS, &context.SegDs) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_ES, &context.SegEs) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_FS, &context.SegFs) != 0)
-		return false;
-
-	if (uc_reg_write((uc_engine *)emulator_x86_, UC_X86_REG_GS, &context.SegGs) != 0)
+	if (!write_x64_cpu_context(context))
 		return false;
 
 	return true;
@@ -238,26 +165,108 @@ bool __stdcall Wow64EmulationDebugger::trace_x64()
 	return true;
 }
 
-bool __stdcall Wow64EmulationDebugger::read_context_x64(CONTEXT *context)
+bool __stdcall Wow64EmulationDebugger::read_x64_cpu_context(CONTEXT *context)
 {
-	if (!emulator_x64_)
+	int x86_register[] = { UC_X64_REGISTER_SET };
+	int size = sizeof(x86_register) / sizeof(int);
+	unsigned long long *read_register = nullptr;
+	void **read_ptr = nullptr;
+
+	read_register = (unsigned long long *)malloc(sizeof(unsigned long long)*size);
+	if (!read_register)
 		return false;
+	std::shared_ptr<void> read_register_closer(read_register, free);
+	memset(read_register, 0, sizeof(unsigned long long)*size);
+
+	read_ptr = (void **)malloc(sizeof(void **)*size);
+	if (!read_ptr)
+		return false;
+	std::shared_ptr<void> read_ptr_closer(read_ptr, free);
+	memset(read_ptr, 0, sizeof(void **)*size);
+
+	for (int i = 0; i < size; ++i)
+		read_ptr[i] = &read_register[i];
 
 	uc_engine *uc = (uc_engine *)emulator_x64_;
-
-	if (uc_reg_read(uc, UC_X86_REG_RAX, &context->Rax) != 0 || uc_reg_read(uc, UC_X86_REG_RBX, &context->Rbx) != 0 || uc_reg_read(uc, UC_X86_REG_RCX, &context->Rcx) != 0
-		|| uc_reg_read(uc, UC_X86_REG_RDX, &context->Rdx) != 0 || uc_reg_read(uc, UC_X86_REG_RDI, &context->Rdi) != 0 || uc_reg_read(uc, UC_X86_REG_RSI, &context->Rsi) != 0
-		|| uc_reg_read(uc, UC_X86_REG_RSP, &context->Rsp) != 0 || uc_reg_read(uc, UC_X86_REG_RBP, &context->Rbp) != 0 || uc_reg_read(uc, UC_X86_REG_RIP, &context->Rip) != 0
-		|| uc_reg_read(uc, UC_X86_REG_EFLAGS, &context->EFlags) != 0)
+	if (uc_reg_read_batch(uc, x86_register, read_ptr, size) != 0)
 		return false;
 
-	if (uc_reg_read(uc, UC_X86_REG_R8, &context->R8) != 0 || uc_reg_read(uc, UC_X86_REG_R9, &context->R9) != 0 || uc_reg_read(uc, UC_X86_REG_R10, &context->R10) != 0
-		|| uc_reg_read(uc, UC_X86_REG_R11, &context->R11) != 0 || uc_reg_read(uc, UC_X86_REG_R12, &context->R12) != 0 || uc_reg_read(uc, UC_X86_REG_R13, &context->R13) != 0
-		|| uc_reg_read(uc, UC_X86_REG_R14, &context->R14) != 0 || uc_reg_read(uc, UC_X86_REG_R15, &context->R15) != 0)
-		return false;
+	context->Rax = read_register[PR_RAX];
+	context->Rbx = read_register[PR_RBX];
+	context->Rcx = read_register[PR_RCX];
+	context->Rdx = read_register[PR_RDX];
+	context->Rsi = read_register[PR_RSI];
+	context->Rdi = read_register[PR_RDI];
+	context->Rsp = read_register[PR_RSP];
+	context->Rbp = read_register[PR_RBP];
+	context->Rip = read_register[PR_RIP];
+	context->R8 = read_register[PR_R8];
+	context->R9 = read_register[PR_R9];
+	context->R10 = read_register[PR_R10];
+	context->R11 = read_register[PR_R11];
+	context->R12 = read_register[PR_R12];
+	context->R13 = read_register[PR_R13];
+	context->R14 = read_register[PR_R14];
+	context->R15 = read_register[PR_R15];
+	context->EFlags = (unsigned long)read_register[PR_EFLAGS];
+	context->SegCs = (unsigned short)read_register[PR_REG_CS];
+	context->SegDs = (unsigned short)read_register[PR_REG_DS];
+	context->SegEs = (unsigned short)read_register[PR_REG_ES];
+	context->SegFs = (unsigned short)read_register[PR_REG_FS];
+	context->SegGs = (unsigned short)read_register[PR_REG_GS];
+	context->SegSs = (unsigned short)read_register[PR_REG_SS];
 
-	if (uc_reg_read(uc, UC_X86_REG_CS, &context->SegCs) != 0 || uc_reg_read(uc, UC_X86_REG_DS, &context->SegDs) != 0 || uc_reg_read(uc, UC_X86_REG_ES, &context->SegEs) != 0
-		|| uc_reg_read(uc, UC_X86_REG_FS, &context->SegFs) != 0 || uc_reg_read(uc, UC_X86_REG_GS, &context->SegGs) != 0 || uc_reg_read(uc, UC_X86_REG_SS, &context->SegSs) != 0)
+	return true;
+}
+
+bool __stdcall Wow64EmulationDebugger::write_x64_cpu_context(CONTEXT context)
+{
+	int x86_register[] = { UC_X64_REGISTER_SET };
+	int size = sizeof(x86_register) / sizeof(int);
+	unsigned long long *write_register = nullptr;
+	void **write_ptr = nullptr;
+
+	write_register = (unsigned long long *)malloc(sizeof(unsigned long long)*size);
+	if (!write_register)
+		return false;
+	std::shared_ptr<void> write_register_closer(write_register, free);
+	memset(write_register, 0, sizeof(unsigned long long)*size);
+
+	write_ptr = (void **)malloc(sizeof(void **)*size);
+	if (!write_ptr)
+		return false;
+	std::shared_ptr<void> write_ptr_closer(write_ptr, free);
+	memset(write_ptr, 0, sizeof(void **)*size);
+
+	for (int i = 0; i < size; ++i)
+		write_ptr[i] = &write_register[i];
+
+	write_register[PR_RAX] = context.Rax;
+	write_register[PR_RBX] = context.Rbx;
+	write_register[PR_RCX] = context.Rcx;
+	write_register[PR_RDX] = context.Rdx;
+	write_register[PR_RSI] = context.Rsi;
+	write_register[PR_RDI] = context.Rdi;
+	write_register[PR_RSP] = context.Rsp;
+	write_register[PR_RBP] = context.Rbp;
+	write_register[PR_R8] = context.R8;
+	write_register[PR_R9] = context.R9;
+	write_register[PR_R10] = context.R10;
+	write_register[PR_R11] = context.R11;
+	write_register[PR_R12] = context.R12;
+	write_register[PR_R13] = context.R13;
+	write_register[PR_R14] = context.R14;
+	write_register[PR_R15] = context.R15;
+	write_register[PR_EFLAGS] = (unsigned long)context.EFlags;
+	write_register[PR_REG_CS] = context.SegCs;
+	write_register[PR_REG_DS] = context.SegDs;
+	write_register[PR_REG_ES] = context.SegEs;
+	write_register[PR_REG_FS] = context.SegFs;
+	write_register[PR_REG_GS] = context.SegGs;
+	write_register[PR_REG_SS] = context.SegSs;
+
+	uc_engine *uc = (uc_engine *)emulator_x64_;
+	if (uc_reg_write_batch(uc, x86_register, write_ptr, size) != 0)
 		return false;
 
 	return true;
@@ -310,37 +319,33 @@ bool __stdcall Wow64EmulationDebugger::switch_x64()
 	CONTEXT context;
 	memset(&context, 0, sizeof(context));
 
-	if (!read_context_x86(&context))
+	if (!read_x86_cpu_context(&context))
 		return false;
 
 	context.SegCs = 0x33;
 	if (!create_global_descriptor_table(uc_x64, &context, sizeof(context)))
 		return false;
-	///
-	///
-	///
-	if (uc_reg_write(uc_x64, UC_X86_REG_RAX, &context.Rax) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RBX, &context.Rbx) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RCX, &context.Rcx) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_RDX, &context.Rdx) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RDI, &context.Rdi) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RSI, &context.Rsi) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_RSP, &context.Rsp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RBP, &context.Rbp) != 0 || uc_reg_write(uc_x64, UC_X86_REG_RIP, &context.Rip) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_EFLAGS, &context.EFlags) != 0)
-		return false;
 
-	if (uc_reg_write(uc_x64, UC_X86_REG_CS, &context.SegCs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_DS, &context.SegDs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_ES, &context.SegEs) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_FS, &context.SegFs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_GS, &context.SegGs) != 0 || uc_reg_write(uc_x64, UC_X86_REG_SS, &context.SegSs) != 0)
-		return false;
-	///
-	///
-	///
 	std::shared_ptr<binary::linker> windbg_linker;
 	if (!binary::create<WindbgSafeLinker>(windbg_linker))
 		return false;
 
-	if(!windbg_linker->get_context(&context, sizeof(context)))
+	CONTEXT x64_context;
+	memset(&x64_context, 0, sizeof(x64_context));
+
+	if(!windbg_linker->get_context(&x64_context, sizeof(x64_context)))
 		return false;
 
-	if (uc_reg_write(uc_x64, UC_X86_REG_R8, &context.R8) != 0 || uc_reg_write(uc_x64, UC_X86_REG_R9, &context.R9) != 0 || uc_reg_write(uc_x64, UC_X86_REG_R10, &context.R10) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_R11, &context.R11) != 0 || uc_reg_write(uc_x64, UC_X86_REG_R12, &context.R12) != 0 || uc_reg_write(uc_x64, UC_X86_REG_R13, &context.R13) != 0
-		|| uc_reg_write(uc_x64, UC_X86_REG_R14, &context.R14) != 0 || uc_reg_write(uc_x64, UC_X86_REG_R15, &context.R15) != 0)
+	context.R8 = x64_context.R8;
+	context.R9 = x64_context.R9;
+	context.R10 = x64_context.R10;
+	context.R11 = x64_context.R11;
+	context.R12 = x64_context.R12;
+	context.R13 = x64_context.R13;
+	context.R14 = x64_context.R14;
+	context.R15 = x64_context.R15;
+
+	if (!write_x64_cpu_context(context))
 		return false;
 
 	uc_close(uc_x86);
