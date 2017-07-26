@@ -62,8 +62,8 @@ namespace binary
 
 		virtual bool __stdcall read(unsigned long long address, void *dump, size_t dump_size) = 0;
 		virtual bool __stdcall write(unsigned long long address, void *dump, size_t dump_size) = 0;
-		virtual bool __stdcall read_register(char *mask, unsigned long long *value) = 0;
-		virtual bool __stdcall write_register(char *mask, unsigned long long value) = 0;
+		virtual bool __stdcall read_register(unsigned int id, unsigned long long *value) = 0;
+		virtual bool __stdcall write_register(unsigned int id, unsigned long long value) = 0;
 		virtual bool __stdcall read_context(void *context, size_t context_size) = 0;
 
 		//virtual bool __stdcall push(int value) = 0;
