@@ -57,9 +57,6 @@ public:
 	virtual bool __stdcall read_register(unsigned int id, unsigned long long *value);
 	virtual bool __stdcall write_register(unsigned int id, unsigned long long value);
 	
-	virtual bool __stdcall read_register(char *mask, unsigned long long *value);
-	virtual bool __stdcall write_register(char *mask, unsigned long long value);
-	
 	virtual bool __stdcall read_context(void *context, size_t context_size);
 
 	virtual bool __stdcall attach();
