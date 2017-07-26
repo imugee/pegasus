@@ -188,7 +188,7 @@ bool __stdcall Wow64EmulationDebugger::trace_x86()
 			if (!switch_x64())
 				return false;
 
-			if (!write_register("rip", syscall))
+			if (!write_register(UC_X86_REG_RIP, syscall))
 				return false;
 
 			return true;
