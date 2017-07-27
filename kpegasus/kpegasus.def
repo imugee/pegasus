@@ -1,0 +1,6 @@
+LIBRARY KPEGASUS
+
+EXPORTS
+	DebugExtensionInitialize
+	DebugExtensionUninitialize
+	DebugExtensionNotify
