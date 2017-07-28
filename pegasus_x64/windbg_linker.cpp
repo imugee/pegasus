@@ -175,3 +175,47 @@ unsigned long long __stdcall WindbgSafeLinker::get_peb_address()
 
 	return peb_address;
 }
+
+bool __stdcall WindbgSafeLinker::write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...)
+{
+	FILE *log = NULL;
+	wchar_t path[MAX_PATH];
+
+	memset(path, 0, MAX_PATH);
+	StringCbCopy(path, MAX_PATH, log_dir);
+	StringCbCat(path, MAX_PATH, L"\\");
+	StringCbCat(path, MAX_PATH, log_file_name);
+
+	log = _wfopen(path, L"a+");
+
+	va_list ap;
+	va_start(ap, format);
+
+	vfwprintf(log, format, ap);
+
+	va_end(ap);
+	fclose(log);
+
+	return true;
+}
+
+bool __stdcall WindbgSafeLinker::write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size)
+{
+	WCHAR path[MAX_PATH] = { 0, };
+
+	StringCbCopy(path, MAX_PATH, bin_dir);
+	StringCbCat(path, MAX_PATH, L"\\");
+	StringCbCat(path, MAX_PATH, bin_file_name);
+
+	HANDLE h_file = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD written = 0;
+
+	if (h_file == INVALID_HANDLE_VALUE)
+		return false;
+
+	std::shared_ptr<void> handle_closer(h_file, CloseHandle);
+	if (!WriteFile(h_file, (PVOID)dump, (DWORD)size, &written, NULL))
+		return false;
+
+	return true;
+}
