@@ -219,3 +219,24 @@ bool __stdcall WindbgSafeLinker::write_binary(wchar_t *bin_dir, wchar_t *bin_fil
 
 	return true;
 }
+
+bool __stdcall WindbgSafeLinker::read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size)
+{
+	WCHAR path[MAX_PATH] = { 0, };
+
+	StringCbCopy(path, MAX_PATH, bin_dir);
+	StringCbCat(path, MAX_PATH, L"\\");
+	StringCbCat(path, MAX_PATH, bin_file_name);
+
+	HANDLE h_file = CreateFile(path, GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD readn = 0;
+
+	if (h_file == INVALID_HANDLE_VALUE)
+		return false;
+
+	std::shared_ptr<void> handle_closer(h_file, CloseHandle);
+	if (!ReadFile(h_file, (PVOID)dump, (DWORD)size, &readn, NULL))
+		return false;
+
+	return true;
+}
