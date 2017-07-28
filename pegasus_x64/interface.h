@@ -88,6 +88,9 @@ namespace binary
 		virtual bool __stdcall virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi) = 0;
 		virtual unsigned long __stdcall read_memory(uint64_t address, void *buffer, size_t buffer_size) = 0;
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
+		
+		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
+		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 	};
 
 	template <typename T1, class T2> bool __stdcall create(std::shared_ptr<T2> &u);
