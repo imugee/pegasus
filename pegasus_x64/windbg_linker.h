@@ -6,7 +6,7 @@
 class WindbgSafeLinker : public binary::linker
 {
 private:
-	/// ¼Óµµ¸¦ À§ÇØ ¹Ì¸® »ý¼º
+	/// Â¼Ã“ÂµÂµÂ¸Â¦ Ã€Â§Ã‡Ã˜ Â¹ÃŒÂ¸Â® Â»Ã½Â¼Âº
 	void *debug_client_;
 	void *debug_data_space_;
 	void *debug_data_space_2_;
@@ -28,6 +28,9 @@ public:
 	virtual bool __stdcall virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi);
 	virtual unsigned long __stdcall read_memory(uint64_t address, void *buffer, size_t buffer_size);
 	virtual bool __stdcall get_context(void *context, size_t context_size);
+	
+	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
+	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 };
 
 #endif
