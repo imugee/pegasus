@@ -1,6 +1,9 @@
 LIBRARY KPEGASUS
 
 EXPORTS
+	; ExtCpp framework.
 	DebugExtensionInitialize
 	DebugExtensionUninitialize
 	DebugExtensionNotify
+	; test
+	test
