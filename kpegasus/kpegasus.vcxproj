@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="engextcpp.cpp" />
+    <ClCompile Include="method.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engextcpp.hpp" />
