@@ -2117,8 +2117,8 @@ void WINAPIV ExtVerb(_In_ PCSTR Format, ...);
 #endif
 
 extern ExtCheckedPointer<ExtExtension> g_Ext;
-ExtExtension* g_ExtInstancePtr;
-//extern ExtExtension* g_ExtInstancePtr;
+//ExtExtension* g_ExtInstancePtr;
+extern ExtExtension* g_ExtInstancePtr;
 
 // Put a single use of this macro in one source file.
 #define EXT_DECLARE_GLOBALS() \
