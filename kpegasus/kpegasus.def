@@ -5,5 +5,6 @@ EXPORTS
 	DebugExtensionInitialize
 	DebugExtensionUninitialize
 	DebugExtensionNotify
+
 	; test
-	test
+	kaddress
