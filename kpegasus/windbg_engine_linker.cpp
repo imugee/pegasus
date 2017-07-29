@@ -1,3 +1,4 @@
+// https://www.reactos.org/wiki/Techwiki:Ntoskrnl/MMVAD
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <engextcpp.hpp>
