@@ -31,6 +31,9 @@ EXT_COMMAND(kaddress,
 	{
 		unsigned long long pid = GetArgU64("pid", FALSE);
 		windbg_linker->select_process(pid);
+		///
+		unsigned long long vad_size = 0;
+		windbg_process::vad_node_ptr vad = (windbg_process::vad_node_ptr)windbg_linker->get_vad_node(&vad_size);
 	}
 
 	//if (windbg_linker->virtual_query(0, nullptr, 0))

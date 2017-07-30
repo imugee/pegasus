@@ -94,6 +94,7 @@ namespace engine
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 
 		virtual void __stdcall select_process(unsigned long long pid) = 0;
+		virtual void * __stdcall get_vad_node(unsigned long long *size) = 0;
 	};
 
 	template <typename T1, class T2> bool __stdcall create(std::shared_ptr<T2> &u);
