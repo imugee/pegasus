@@ -33,8 +33,14 @@ private:
 	bool __stdcall set_vad_list(ExtRemoteTyped node);
 
 public:
+	windbg_process();
 	windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node);
+	void __stdcall set_process_information(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node);
 	std::list<vad_node> get_vad_list();
+
+	unsigned long long __stdcall get_pid() { return pid_; }
+	unsigned long long __stdcall get_eprocess() { return eprocess_; }
+
 };
 
 class windbg_engine_linker : public engine::linker
@@ -48,8 +54,7 @@ private:
 
 	bool init_flag_;
 
-	std::shared_ptr<windbg_process> process_;
-	windbg_process::vad_node_ptr vad_table_;
+	std::list<windbg_process> process_list_;
 
 public:
 	windbg_engine_linker();
@@ -68,9 +73,8 @@ public:
 	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
 	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 	virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
-
-	virtual void __stdcall select_process(unsigned long long pid);
-	virtual void * __stdcall get_vad_node(unsigned long long *size);
+	
+	virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size);
 };
 
 #endif // !__DEFINE_PEGASUS_WINDBG_ENGINE_LINKER
