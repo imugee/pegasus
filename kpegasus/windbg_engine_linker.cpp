@@ -16,6 +16,19 @@
 ///
 ///
 ///
+windbg_process::windbg_process()
+{
+}
+
+void __stdcall windbg_process::set_process_information(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node)
+{
+	if (eprocess_node.Field("VadRoot").HasField("Root"))
+	{
+		vad_root_node_ = eprocess_node_.Field("VadRoot").Field("Root");
+		set_vad_list(vad_root_node_);
+	}
+}
+
 windbg_process::windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node) : eprocess_(eprocess), pid_(pid), eprocess_node_(eprocess_node)
 {
 	if(eprocess_node_.Field("VadRoot").HasField("Root"))
@@ -82,6 +95,7 @@ bool __stdcall windbg_process::set_vad_list(ExtRemoteTyped node)
 
 	return true;
 }
+
 std::list<windbg_process::vad_node> __stdcall windbg_process::get_vad_list()
 {
 	return vad_list_;
@@ -89,16 +103,32 @@ std::list<windbg_process::vad_node> __stdcall windbg_process::get_vad_list()
 ///
 ///
 ///
-windbg_engine_linker::windbg_engine_linker() : process_(nullptr)
+windbg_engine_linker::windbg_engine_linker()
 {
-	if (DebugCreate(__uuidof(IDebugClient), (void **)&debug_client_) == S_OK
-		&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces2), (void **)&debug_data_space_2_) == S_OK
-		&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces), (void **)&debug_data_space_) == S_OK
-		&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugAdvanced), (void **)&debug_advanced_) == S_OK
-		&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugSystemObjects), (void **)&debug_system_objects_) == S_OK)
-		init_flag_ = true;
+	if (g_Ext->IsKernelMode())
+	{
+		ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessList(); // eprocess list
+
+		for (list.StartHead(); list.HasNode(); list.Next())
+		{
+			ExtRemoteTyped n = list.GetTypedNode();
+			ULONG64 current_pid = n.Field("UniqueProcessId").GetPtr();
+			windbg_process process(list.GetNodeOffset(), current_pid, n);
+
+			process_list_.push_back(process);
+		}
+	}
 	else
-		init_flag_ = false;
+	{
+		if (DebugCreate(__uuidof(IDebugClient), (void **)&debug_client_) == S_OK
+			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces2), (void **)&debug_data_space_2_) == S_OK
+			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces), (void **)&debug_data_space_) == S_OK
+			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugAdvanced), (void **)&debug_advanced_) == S_OK
+			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugSystemObjects), (void **)&debug_system_objects_) == S_OK)
+			init_flag_ = true;
+		else
+			init_flag_ = false;
+	}
 }
 windbg_engine_linker::~windbg_engine_linker() {}
 
@@ -294,35 +324,23 @@ bool __stdcall windbg_engine_linker::read_binary(wchar_t *bin_dir, wchar_t *bin_
 	return true;
 }
 
-void __stdcall windbg_engine_linker::select_process(unsigned long long pid)
+bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table_size, size_t *read_size)
 {
-	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessList(); // eprocess list
+	if (!table)
+		return false;
 
-	for (list.StartHead(); list.HasNode(); list.Next())
-	{
-		ExtRemoteTyped n = list.GetTypedNode();
-		ULONG64 current_pid = n.Field("UniqueProcessId").GetPtr();
+	if (sizeof((windbg_process *)table)[0] != sizeof(windbg_process))
+		return false;
 
-		if (current_pid == pid)
-		{
-			process_.reset(new windbg_process(list.GetNodeOffset(), pid, n));
-			std::list<windbg_process::vad_node> vad_list = process_->get_vad_list();
-			std::list<windbg_process::vad_node>::iterator it = vad_list.begin();
-			vad_table_ = (windbg_process::vad_node_ptr)malloc(sizeof(windbg_process::vad_node) * vad_list.size()); // free..
-			unsigned int i = 0;
+	if (process_list_.size() < table_size)
+		table_size = process_list_.size();
 
-			for (it; it != vad_list.end(); ++it)
-				vad_table_[i++] = *it;
+	unsigned int index = 0;
+	std::list<windbg_process>::iterator p = process_list_.begin();
+	for (p; p != process_list_.end(); ++p)
+		((windbg_process *)table)[index++] = *p;
 
-			break;
-		}
-	}
-}
+	*read_size = (size_t)index;
 
-void * __stdcall windbg_engine_linker::get_vad_node(unsigned long long *size)
-{
-	std::list<windbg_process::vad_node> vad_list = process_->get_vad_list();
-	*size = vad_list.size();
-
-	return vad_table_;
+	return true;
 }
