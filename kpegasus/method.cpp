@@ -20,7 +20,7 @@ EXT_COMMAND(kaddress,
 	"",
 	"{pid;ed,o;pid;;}")
 {
-	// unsigned long long pid = GetArgU64("pid", FALSE);
+	unsigned long long pid = GetArgU64("pid", FALSE);
 	std::shared_ptr<engine::linker> windbg_linker;
 	if (!engine::create<windbg_engine_linker>(windbg_linker))
 		return;
@@ -29,15 +29,20 @@ EXT_COMMAND(kaddress,
 	size_t process_count = 0;
 	windbg_linker->get_process_table(process_table, 1024, &process_count);
 
-	for (size_t i = 0; i < process_count; ++i)
+	if (pid)
 	{
-		std::list<windbg_process::vad_node> vad_list = process_table[i].get_vad_list();
-		std::list<windbg_process::vad_node>::iterator vad_node = vad_list.begin();
-
-		dprintf("eprocess=%0*I64x pid=%d(0x%x)\n", 16, process_table[i].get_eprocess(), process_table[i].get_pid(), process_table[i].get_pid());
-		for (vad_node; vad_node != vad_list.end(); ++vad_node)
+		size_t i = 0;
+		for (i; i < process_count; ++i)
 		{
-			dprintf("	%0*I64x - %0*I64x\n", 16, vad_node->start, 16, vad_node->end);
+			if (process_table[i].get_pid() == pid)
+				break;
 		}
+
+		print_vad(process_table[i]);
+	}
+	else
+	{
+		for (size_t i = 0; i < process_count; ++i)
+			print_vad(process_table[i]);
 	}
 }
