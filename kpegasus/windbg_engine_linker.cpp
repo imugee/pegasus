@@ -14,7 +14,17 @@
 
 #pragma comment(lib, "dbgeng.lib")
 ///
+/// thread
 ///
+windbg_thread::windbg_thread()
+{
+}
+
+windbg_thread::windbg_thread(unsigned long long ethread, unsigned long long tid, ExtRemoteTyped ethread_node) : ethread_(ethread), tid_(tid), ethread_node_(ethread_node)
+{
+}
+///
+/// process
 ///
 windbg_process::windbg_process()
 {
@@ -27,6 +37,17 @@ void __stdcall windbg_process::set_process_information(unsigned long long eproce
 		vad_root_node_ = eprocess_node_.Field("VadRoot").Field("Root");
 		set_vad_list(vad_root_node_);
 	}
+	
+	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
+	for (list.StartHead(); list.HasNode(); list.Next())
+	{
+		ExtRemoteTyped n = list.GetTypedNode();
+		if (n.HasField("Cid"))
+		{
+			windbg_thread thread(list.GetNodeOffset(), n.Field("Cid.UniqueThread").GetPtr(), n);
+			thread_list_.push_back(thread);
+		}
+	}
 }
 
 windbg_process::windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node) : eprocess_(eprocess), pid_(pid), eprocess_node_(eprocess_node)
@@ -36,6 +57,17 @@ windbg_process::windbg_process(unsigned long long eprocess, unsigned long long p
 		vad_root_node_ = eprocess_node_.Field("VadRoot").Field("Root");
 		set_vad_list(vad_root_node_);
 
+	}
+	
+	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
+	for (list.StartHead(); list.HasNode(); list.Next())
+	{
+		ExtRemoteTyped n = list.GetTypedNode();
+		if (n.HasField("Cid"))
+		{
+			windbg_thread thread(list.GetNodeOffset(), n.Field("Cid.UniqueThread").GetPtr(), n);
+			thread_list_.push_back(thread);
+		}
 	}
 }
 
@@ -99,6 +131,11 @@ bool __stdcall windbg_process::set_vad_list(ExtRemoteTyped node)
 std::list<windbg_process::vad_node> __stdcall windbg_process::get_vad_list()
 {
 	return vad_list_;
+}
+
+std::list<windbg_thread> __stdcall windbg_process::get_thread_list()
+{
+	return thread_list_;
 }
 ///
 ///
