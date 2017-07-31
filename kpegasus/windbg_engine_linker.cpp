@@ -338,8 +338,12 @@ bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table
 	unsigned int index = 0;
 	std::list<windbg_process>::iterator p = process_list_.begin();
 	for (p; p != process_list_.end(); ++p)
+	{
+		if(table_size == index)
+			break;
+		
 		((windbg_process *)table)[index++] = *p;
-
+	}
 	*read_size = (size_t)index;
 
 	return true;
