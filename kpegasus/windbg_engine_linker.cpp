@@ -155,17 +155,6 @@ windbg_engine_linker::windbg_engine_linker()
 			process_list_.push_back(process);
 		}
 	}
-	else
-	{
-		if (DebugCreate(__uuidof(IDebugClient), (void **)&debug_client_) == S_OK
-			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces2), (void **)&debug_data_space_2_) == S_OK
-			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugDataSpaces), (void **)&debug_data_space_) == S_OK
-			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugAdvanced), (void **)&debug_advanced_) == S_OK
-			&& ((IDebugClient *)debug_client_)->QueryInterface(__uuidof(IDebugSystemObjects), (void **)&debug_system_objects_) == S_OK)
-			init_flag_ = true;
-		else
-			init_flag_ = false;
-	}
 }
 windbg_engine_linker::~windbg_engine_linker() {}
 
@@ -209,10 +198,7 @@ bool __stdcall windbg_engine_linker::virtual_query(uint64_t address, void *conte
 
 bool __stdcall windbg_engine_linker::virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi)
 {
-	if (!init_flag_)
-		return false;
-
-	if (((IDebugDataSpaces2 *)debug_data_space_2_)->QueryVirtual(address, mbi) != S_OK)
+	if (g_Ext->m_Data2->QueryVirtual(address, mbi) != S_OK)
 		return false;
 
 	return true;
@@ -224,10 +210,7 @@ unsigned long __stdcall windbg_engine_linker::read_memory(uint64_t address, void
 
 	try
 	{
-		if (!init_flag_)
-			return 0;
-
-		if (((IDebugDataSpaces *)debug_data_space_)->ReadVirtual(address, buffer, (unsigned long)buffer_size, &readn) != S_OK)
+		if (g_Ext->m_Data->ReadVirtual(address, buffer, (unsigned long)buffer_size, &readn) != S_OK)
 			return 0;
 	}
 	catch (...)
@@ -242,10 +225,7 @@ bool __stdcall windbg_engine_linker::get_context(void *context, size_t context_s
 {
 	try
 	{
-		if (!init_flag_)
-			return false;
-
-		if (((IDebugAdvanced *)debug_advanced_)->GetThreadContext(context, (unsigned long)context_size) != S_OK)
+		if (g_Ext->m_Advanced->GetThreadContext(context, (unsigned long)context_size) != S_OK)
 			return false;
 	}
 	catch (...)
@@ -262,10 +242,7 @@ unsigned long long __stdcall windbg_engine_linker::get_teb_address()
 
 	try
 	{
-		if (!init_flag_)
-			return 0;
-
-		if (((IDebugSystemObjects *)debug_system_objects_)->GetCurrentThreadTeb(&teb_address) != S_OK)
+		if (g_Ext->m_System->GetCurrentThreadTeb(&teb_address) != S_OK)
 			return 0;
 	}
 	catch (...)
@@ -282,10 +259,7 @@ unsigned long long __stdcall windbg_engine_linker::get_peb_address()
 
 	try
 	{
-		if (!init_flag_)
-			return 0;
-
-		if (((IDebugSystemObjects *)debug_system_objects_)->GetCurrentProcessPeb(&peb_address) != S_OK)
+		if (g_Ext->m_System->GetCurrentProcessPeb(&peb_address) != S_OK)
 			return 0;
 	}
 	catch (...)
@@ -294,6 +268,20 @@ unsigned long long __stdcall windbg_engine_linker::get_peb_address()
 	}
 
 	return peb_address;
+}
+
+bool __stdcall windbg_engine_linker::set_debuggee_process(unsigned long pid)
+{
+	if (g_Ext->m_System->SetCurrentProcessId(pid) == S_OK)
+		return true;
+	return false;
+}
+
+bool __stdcall windbg_engine_linker::set_debuggee_thread(unsigned long tid)
+{
+	if (g_Ext->m_System->SetCurrentThreadId(tid) == S_OK)
+		return true;
+	return false;
 }
 
 bool __stdcall windbg_engine_linker::write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...)
