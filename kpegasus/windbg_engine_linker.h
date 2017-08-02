@@ -76,6 +76,9 @@ public:
 	virtual bool __stdcall virtual_query(uint64_t address, void *context, size_t context_size);
 	virtual bool __stdcall virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi);
 	virtual unsigned long __stdcall read_memory(uint64_t address, void *buffer, size_t buffer_size);
+	
+	virtual bool __stdcall set_debuggee_process(unsigned long pid);
+	virtual bool __stdcall set_debuggee_thread(unsigned long tid);
 	virtual bool __stdcall get_context(void *context, size_t context_size);
 
 	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
