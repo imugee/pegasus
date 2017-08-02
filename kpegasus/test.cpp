@@ -8,13 +8,7 @@
 
 #include <interface.h>
 #include <windbg_engine_linker.h>
-
-class EXT_CLASS : public ExtExtension
-{
-public:
-	EXT_COMMAND_METHOD(kaddress);
-};
-EXT_DECLARE_GLOBALS();
+#include <engine.h>
 
 void __stdcall print_vad(windbg_process process)
 {
@@ -40,9 +34,7 @@ void __stdcall print_thread(windbg_process process)
 ///
 ///
 ///
-EXT_COMMAND(kaddress,
-	"",
-	"{pid;ed,o;pid;;}")
+EXT_CLASS_COMMAND(WindbgEngine, test, "", "{pid;ed,o;pid;;}")
 {
 	unsigned long long pid = GetArgU64("pid", FALSE);
 	std::shared_ptr<engine::linker> windbg_linker;
@@ -77,7 +69,27 @@ EXT_COMMAND(kaddress,
 			dprintf("\n");
 		}
 	}
-
-	//g_Ext->m_System->SetCurrentThreadId();
+	WindbgEngine::test2();
+}
+///
+///
+///
+EXT_CLASS_COMMAND(WindbgEngine, test2, "", "{pid;ed,o;pid;;}")
+{
+	dprintf("test2!!\n");
 }
 
+//EXTERN_C HRESULT CALLBACK test2(PDEBUG_CLIENT Client, PCSTR Args);
+//ExtCommandDesc g_test2_desc("test2", (ExtCommandMethod)&WindbgEngine::test2, "", "{pid;ed,o;pid;;}");
+//HRESULT CALLBACK test2(PDEBUG_CLIENT Client, PCSTR Args)
+//{
+//	if (!g_Ext.IsSet())
+//		return E_UNEXPECTED;
+//
+//	return g_Ext->CallCommand(&g_test2_desc, Client, Args);
+//}
+//
+//void WindbgEngine::test2()
+//{
+//	dprintf("test..\n");
+//}
