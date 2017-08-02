@@ -87,6 +87,9 @@ namespace engine
 		virtual bool __stdcall virtual_query(unsigned long long address, void *context, size_t context_size) = 0;
 		virtual bool __stdcall virtual_query(unsigned long long address, MEMORY_BASIC_INFORMATION64 *mbi) = 0;
 		virtual unsigned long __stdcall read_memory(unsigned long long address, void *buffer, size_t buffer_size) = 0;
+		
+		virtual bool __stdcall set_debuggee_process(unsigned long pid) = 0;
+		virtual bool __stdcall set_debuggee_thread(unsigned long tid) = 0;
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
 		
 		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
