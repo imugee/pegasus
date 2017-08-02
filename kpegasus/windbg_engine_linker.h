@@ -62,14 +62,6 @@ public:
 class windbg_engine_linker : public engine::linker
 {
 private:
-	void *debug_client_;
-	void *debug_data_space_;
-	void *debug_data_space_2_;
-	void *debug_advanced_;
-	void *debug_system_objects_;
-
-	bool init_flag_;
-
 	std::list<windbg_process> process_list_;
 
 public:
