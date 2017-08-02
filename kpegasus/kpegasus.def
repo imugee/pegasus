@@ -7,4 +7,5 @@ EXPORTS
 	DebugExtensionNotify
 
 	; test
-	kaddress
+	test
+	test2
