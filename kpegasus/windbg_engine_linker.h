@@ -13,11 +13,12 @@ class windbg_thread
 private:
 	unsigned long long ethread_;
 	unsigned long long tid_;
-	ExtRemoteTyped ethread_node_;
+	//ExtRemoteTyped ethread_node_;
 
 public:
 	windbg_thread();
 	windbg_thread(unsigned long long ethread, unsigned long long tid, ExtRemoteTyped ethread_node);
+	~windbg_thread();
 
 	unsigned long long __stdcall get_tid() { return tid_; }
 	unsigned long long __stdcall get_ethread() { return ethread_; }
@@ -40,8 +41,9 @@ public: // type
 private:
 	unsigned long long pid_;
 	unsigned long long eprocess_;
-	ExtRemoteTyped eprocess_node_;
-	ExtRemoteTyped vad_root_node_;
+	//ExtRemoteTyped eprocess_node_; // engextcpp 요소를 클래스 원소로 주게되면 객체 제거에서 크래시가 발생한다.
+	//ExtRemoteTyped vad_root_node_;
+
 	std::list<vad_node> vad_list_;
 	std::list<windbg_thread> thread_list_;
 
@@ -51,6 +53,8 @@ private:
 public:
 	windbg_process();
 	windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node);
+	~windbg_process();
+
 	void __stdcall set_process_information(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node);
 	std::list<vad_node> get_vad_list();
 	std::list<windbg_thread> __stdcall get_thread_list();

@@ -14,13 +14,17 @@
 
 #pragma comment(lib, "dbgeng.lib")
 ///
-/// thread
+/// threads
 ///
 windbg_thread::windbg_thread()
 {
 }
 
-windbg_thread::windbg_thread(unsigned long long ethread, unsigned long long tid, ExtRemoteTyped ethread_node) : ethread_(ethread), tid_(tid), ethread_node_(ethread_node)
+windbg_thread::windbg_thread(unsigned long long ethread, unsigned long long tid, ExtRemoteTyped ethread_node) : ethread_(ethread), tid_(tid)//, ethread_node_(ethread_node)
+{
+}
+
+windbg_thread::~windbg_thread()
 {
 }
 ///
@@ -34,8 +38,8 @@ void __stdcall windbg_process::set_process_information(unsigned long long eproce
 {
 	if (eprocess_node.Field("VadRoot").HasField("Root"))
 	{
-		vad_root_node_ = eprocess_node_.Field("VadRoot").Field("Root");
-		set_vad_list(vad_root_node_);
+		ExtRemoteTyped vad_root_node = eprocess_node.Field("VadRoot").Field("Root");
+		set_vad_list(vad_root_node);
 	}
 	
 	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
@@ -50,13 +54,12 @@ void __stdcall windbg_process::set_process_information(unsigned long long eproce
 	}
 }
 
-windbg_process::windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node) : eprocess_(eprocess), pid_(pid), eprocess_node_(eprocess_node)
+windbg_process::windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node) : eprocess_(eprocess), pid_(pid)//, eprocess_node_(eprocess_node)
 {
-	if(eprocess_node_.Field("VadRoot").HasField("Root"))
+	if(eprocess_node.Field("VadRoot").HasField("Root"))
 	{
-		vad_root_node_ = eprocess_node_.Field("VadRoot").Field("Root");
-		set_vad_list(vad_root_node_);
-
+		ExtRemoteTyped vad_root_node = eprocess_node.Field("VadRoot").Field("Root");
+		set_vad_list(vad_root_node);
 	}
 	
 	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
@@ -69,6 +72,12 @@ windbg_process::windbg_process(unsigned long long eprocess, unsigned long long p
 			thread_list_.push_back(thread);
 		}
 	}
+}
+
+windbg_process::~windbg_process()
+{
+	thread_list_.clear();
+
 }
 
 bool __stdcall windbg_process::set_vad_list(ExtRemoteTyped node)
@@ -156,7 +165,11 @@ windbg_engine_linker::windbg_engine_linker()
 		}
 	}
 }
-windbg_engine_linker::~windbg_engine_linker() {}
+
+windbg_engine_linker::~windbg_engine_linker() 
+{
+	process_list_.clear();
+}
 
 void __stdcall windbg_engine_linker::setting(const char *argument_str, int *argument_count, char(*args)[MAX_ARGUMENT_LENGTH])
 {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="engextcpp.cpp">
@@ -7,8 +7,13 @@
     <ClCompile Include="windbg_engine_linker.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="engine.cpp" />
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="engine.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator.cpp">
+      <Filter>emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="kpegasus.def" />
@@ -16,6 +21,9 @@
   <ItemGroup>
     <Filter Include="engine">
       <UniqueIdentifier>{e7ff508f-fa27-4b48-9b4b-d8b0c41957ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="emulator">
+      <UniqueIdentifier>{5e2a50a6-92c6-48a6-9468-85a97876eb15}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -28,6 +36,11 @@
     <ClInclude Include="windbg_engine_linker.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="engine.h" />
+    <ClInclude Include="engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="emulator.h">
+      <Filter>emulator</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

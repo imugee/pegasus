@@ -19,7 +19,11 @@ HRESULT WindbgEngine::Initialize()
 	ExtensionApis.nSize = sizeof(ExtensionApis);
 	debug_control->GetWindbgExtensionApis64(&ExtensionApis);
 
-	dprintf("test...\n");
+	dprintf("*****************************************************\n");
+	dprintf("*                                                   *\n");
+	dprintf("*         PEGASUS - Windbg emulation plugin         *\n");
+	dprintf("*                                                   *\n");
+	dprintf("*****************************************************\n");
 
 	return S_OK;
 }
