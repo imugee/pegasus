@@ -149,11 +149,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="engextcpp.cpp" />
-    <ClCompile Include="method.cpp" />
+    <ClCompile Include="engine.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="windbg_engine_linker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engextcpp.hpp" />
+    <ClInclude Include="engine.h" />
     <ClInclude Include="interface.h" />
     <ClInclude Include="windbg_engine_linker.h" />
   </ItemGroup>
