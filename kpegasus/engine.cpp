@@ -1,13 +1,15 @@
 #include <engextcpp.hpp>
 #include <engine.h>
+///
+///
+///
+WindbgEngine g_windbg_engine;
+ExtExtension* g_ExtInstancePtr = &g_windbg_engine;
 
-EXT_DECLARE_GLOBALS();
+WindbgEngine::WindbgEngine()
+{}
 
-Extension::Extension()
-{
-}
-
-HRESULT	Extension::Initialize(void)
+HRESULT WindbgEngine::Initialize()
 {
 	PDEBUG_CLIENT debug_client;
 	PDEBUG_CONTROL debug_control;
@@ -17,7 +19,7 @@ HRESULT	Extension::Initialize(void)
 	ExtensionApis.nSize = sizeof(ExtensionApis);
 	debug_control->GetWindbgExtensionApis64(&ExtensionApis);
 
-	dprintf("..\n");
+	dprintf("test...\n");
 
 	return S_OK;
 }
