@@ -10,5 +10,17 @@ public:
 	void test();
 	void test2();
 };
+///
+///
+///
+class EmulationEngine : public ExtExtension
+{
+public:
+	EmulationEngine();
+
+	void open();
+	void close();
+	void trace();
+};
 
 #endif
