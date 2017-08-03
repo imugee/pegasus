@@ -41,7 +41,7 @@ public: // type
 private:
 	unsigned long long pid_;
 	unsigned long long eprocess_;
-	//ExtRemoteTyped eprocess_node_; // engextcpp ¿ä¼Ò¸¦ Å¬·¡½º ¿ø¼Ò·Î ÁÖ°ÔµÇ¸é °´Ã¼ Á¦°Å¿¡¼­ Å©·¡½Ã°¡ ¹ß»ıÇÑ´Ù.
+	//ExtRemoteTyped eprocess_node_; // engextcpp ìš”ì†Œë¥¼ í´ë˜ìŠ¤ ì›ì†Œë¡œ ì£¼ê²Œë˜ë©´ ê°ì²´ ì œê±°ì—ì„œ í¬ë˜ì‹œê°€ ë°œìƒí•œë‹¤.
 	//ExtRemoteTyped vad_root_node_;
 
 	std::list<vad_node> vad_list_;
@@ -88,6 +88,7 @@ public:
 	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
 	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 	virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
+	virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size);
 	
 	virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size);
 };
