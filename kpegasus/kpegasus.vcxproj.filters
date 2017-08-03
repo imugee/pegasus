@@ -14,6 +14,7 @@
     <ClCompile Include="emulator.cpp">
       <Filter>emulator</Filter>
     </ClCompile>
+    <ClCompile Include="emul.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="kpegasus.def" />

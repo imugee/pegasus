@@ -55,6 +55,8 @@ namespace engine
 	public:
 		virtual ~debugger() {}
 
+		virtual bool __stdcall attach() = 0;
+		virtual bool __stdcall trace32() = 0;
 		//virtual bool __stdcall is_64() = 0;
 		//virtual bool __stdcall check(unsigned long long address) = 0;
 		//virtual bool __stdcall link(unsigned long long address) = 0;
@@ -87,16 +89,16 @@ namespace engine
 		virtual bool __stdcall virtual_query(unsigned long long address, void *context, size_t context_size) = 0;
 		virtual bool __stdcall virtual_query(unsigned long long address, MEMORY_BASIC_INFORMATION64 *mbi) = 0;
 		virtual unsigned long __stdcall read_memory(unsigned long long address, void *buffer, size_t buffer_size) = 0;
-		
+
 		virtual bool __stdcall set_debuggee_process(unsigned long pid) = 0;
 		virtual bool __stdcall set_debuggee_thread(unsigned long tid) = 0;
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
-		
+
 		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
 		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
-		
 		virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size) = 0;
+
 		virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size) = 0;
 	};
 

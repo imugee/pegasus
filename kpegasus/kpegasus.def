@@ -9,3 +9,7 @@ EXPORTS
 	; test
 	test
 	test2
+
+	; emul
+	attach
+	trace

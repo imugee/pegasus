@@ -18,7 +18,7 @@ class EmulationEngine : public ExtExtension
 public:
 	EmulationEngine();
 
-	void open();
+	void attach();
 	void close();
 	void trace();
 };

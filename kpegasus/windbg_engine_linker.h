@@ -80,7 +80,7 @@ public:
 	virtual bool __stdcall virtual_query(uint64_t address, void *context, size_t context_size);
 	virtual bool __stdcall virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi);
 	virtual unsigned long __stdcall read_memory(uint64_t address, void *buffer, size_t buffer_size);
-	
+
 	virtual bool __stdcall set_debuggee_process(unsigned long pid);
 	virtual bool __stdcall set_debuggee_thread(unsigned long tid);
 	virtual bool __stdcall get_context(void *context, size_t context_size);
@@ -89,7 +89,7 @@ public:
 	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 	virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 	virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size);
-	
+
 	virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size);
 };
 

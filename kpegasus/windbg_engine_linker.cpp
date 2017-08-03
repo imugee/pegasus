@@ -41,7 +41,7 @@ void __stdcall windbg_process::set_process_information(unsigned long long eproce
 		ExtRemoteTyped vad_root_node = eprocess_node.Field("VadRoot").Field("Root");
 		set_vad_list(vad_root_node);
 	}
-	
+
 	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
 	for (list.StartHead(); list.HasNode(); list.Next())
 	{
@@ -56,12 +56,12 @@ void __stdcall windbg_process::set_process_information(unsigned long long eproce
 
 windbg_process::windbg_process(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node) : eprocess_(eprocess), pid_(pid)//, eprocess_node_(eprocess_node)
 {
-	if(eprocess_node.Field("VadRoot").HasField("Root"))
+	if (eprocess_node.Field("VadRoot").HasField("Root"))
 	{
 		ExtRemoteTyped vad_root_node = eprocess_node.Field("VadRoot").Field("Root");
 		set_vad_list(vad_root_node);
 	}
-	
+
 	ExtRemoteTypedList list = ExtNtOsInformation::GetKernelProcessThreadList(eprocess); // ethread list
 	for (list.StartHead(); list.HasNode(); list.Next())
 	{
@@ -166,7 +166,7 @@ windbg_engine_linker::windbg_engine_linker()
 	}
 }
 
-windbg_engine_linker::~windbg_engine_linker() 
+windbg_engine_linker::~windbg_engine_linker()
 {
 	process_list_.clear();
 }
@@ -349,7 +349,7 @@ bool __stdcall windbg_engine_linker::read_binary(wchar_t *bin_dir, wchar_t *bin_
 	StringCbCat(path, MAX_PATH, L"\\");
 	StringCbCat(path, MAX_PATH, bin_file_name);
 
-	HANDLE h_file = CreateFile(path, GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE h_file = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	DWORD readn = 0;
 
 	if (h_file == INVALID_HANDLE_VALUE)
@@ -383,9 +383,14 @@ bool __stdcall windbg_engine_linker::file_query(wchar_t *bin_dir, wchar_t *bin_f
 		size_t region_size = (wfd.nFileSizeHigh * (MAXDWORD + 1)) + wfd.nFileSizeLow;
 		unsigned long long end_address = base_address + region_size;
 
-		if(base_address <= value && value <= end_address)
-			;//dprintf("%llx %llx\n", base_address, region_size);
-
+		if (base_address <= value && value <= end_address)
+		{
+			if (file_name && size)
+			{
+				*size = region_size;
+				StringCbCopy(file_name, MAX_PATH, wfd.cFileName);
+			}
+		}
 	} while (FindNextFile(h_file, &wfd));
 
 	return true;
@@ -406,9 +411,9 @@ bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table
 	std::list<windbg_process>::iterator p = process_list_.begin();
 	for (p; p != process_list_.end(); ++p)
 	{
-		if(table_size == index)
+		if (table_size == index)
 			break;
-		
+
 		((windbg_process *)table)[index++] = *p;
 	}
 	*read_size = (size_t)index;

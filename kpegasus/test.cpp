@@ -76,11 +76,8 @@ EXT_CLASS_COMMAND(WindbgEngine, test, "", "{pid;ed,o;pid;;}")
 ///
 ///
 ///
-std::shared_ptr<engine::debugger> g_emulator;
-
 EXT_CLASS_COMMAND(WindbgEngine, test2, "", "{pid;ed,o;pid;;}")
 {
-	engine::create<emulation_debugger>(g_emulator);
 	dprintf("test2!!\n");
 }
 

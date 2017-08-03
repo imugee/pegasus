@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="emul.cpp" />
     <ClCompile Include="emulator.cpp" />
     <ClCompile Include="engextcpp.cpp" />
     <ClCompile Include="engine.cpp" />
