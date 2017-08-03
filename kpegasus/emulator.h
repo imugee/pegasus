@@ -9,6 +9,7 @@ private:
 
 public:
 	r3_emulation_debugger();
+	virtual bool __stdcall attach();
 };
 
 #endif // !__DEFINE_PEGASUS_EMULATOR_HEADER
