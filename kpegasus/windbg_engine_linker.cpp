@@ -362,6 +362,35 @@ bool __stdcall windbg_engine_linker::read_binary(wchar_t *bin_dir, wchar_t *bin_
 	return true;
 }
 
+bool __stdcall windbg_engine_linker::file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size)
+{
+	WIN32_FIND_DATA wfd;
+	WCHAR path[MAX_PATH] = { 0, };
+	StringCbCopy(path, MAX_PATH, bin_dir);
+	StringCbCat(path, MAX_PATH, L"\\");
+	StringCbCat(path, MAX_PATH, bin_file_name);
+
+	HANDLE h_file = FindFirstFile(path, &wfd);
+
+	if (h_file == INVALID_HANDLE_VALUE)
+		return false;
+	std::shared_ptr<void> file_closer(h_file, CloseHandle);
+
+	do
+	{
+		wchar_t *end = nullptr;
+		unsigned long long base_address = wcstoll(wfd.cFileName, &end, 16);
+		size_t region_size = (wfd.nFileSizeHigh * (MAXDWORD + 1)) + wfd.nFileSizeLow;
+		unsigned long long end_address = base_address + region_size;
+
+		if(base_address <= value && value <= end_address)
+			;//dprintf("%llx %llx\n", base_address, region_size);
+
+	} while (FindNextFile(h_file, &wfd));
+
+	return true;
+}
+
 bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table_size, size_t *read_size)
 {
 	if (!table)
