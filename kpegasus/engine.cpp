@@ -27,3 +27,9 @@ HRESULT WindbgEngine::Initialize()
 
 	return S_OK;
 }
+///
+///
+///
+EmulationEngine::EmulationEngine()
+{}
+
