@@ -96,6 +96,7 @@ namespace engine
 		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 		
+		virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size) = 0;
 		virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size) = 0;
 	};
 
