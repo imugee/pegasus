@@ -15,7 +15,6 @@
 
 #pragma comment(lib, "unicorn_static_x64.lib")
 
-emulation_debugger::emulation_debugger()
+r3_emulation_debugger::r3_emulation_debugger()
 {
-	//engine::create<windbg_engine_linker>(windbg_linker_);
 }
