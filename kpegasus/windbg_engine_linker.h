@@ -41,8 +41,6 @@ public: // type
 private:
 	unsigned long long pid_;
 	unsigned long long eprocess_;
-	//ExtRemoteTyped eprocess_node_; // engextcpp 요소를 클래스 원소로 주게되면 객체 제거에서 크래시가 발생한다.
-	//ExtRemoteTyped vad_root_node_;
 
 	std::list<vad_node> vad_list_;
 	std::list<windbg_thread> thread_list_;
@@ -88,7 +86,6 @@ public:
 	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
 	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 	virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
-	virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size);
 
 	virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size);
 };

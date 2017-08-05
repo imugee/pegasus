@@ -55,8 +55,10 @@ namespace engine
 	public:
 		virtual ~debugger() {}
 
+		virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size) = 0;
+
 		virtual bool __stdcall attach() = 0;
-		virtual bool __stdcall trace32() = 0;
+		virtual bool __stdcall trace32(void *code_callback, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback) = 0;
 		//virtual bool __stdcall is_64() = 0;
 		//virtual bool __stdcall check(unsigned long long address) = 0;
 		//virtual bool __stdcall link(unsigned long long address) = 0;
@@ -97,7 +99,6 @@ namespace engine
 		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
 		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
-		virtual bool __stdcall file_query(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned long long value, wchar_t *file_name, size_t *size) = 0;
 
 		virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size) = 0;
 	};
