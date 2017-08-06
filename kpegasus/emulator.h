@@ -10,17 +10,6 @@ public:
 		size_t size = 0;
 	}page;
 
-	typedef enum 
-	{
-		SegCs, SegDs, SegEs, SegFs, SegGs, SegSs,
-		EFlags,
-		Dr0, Dr1, Dr2, Dr3, Dr6, Dr7, 
-		Rax, Rcx, Rdx, Rbx, Rsp, Rbp, Rsi, Rdi,
-		R8, R9, R10, R11, R12, R13, R14, R15,
-		Rip,
-		Xmm0, Xmm1, Xmm2, Xmm3, Xmm4, Xmm5, Xmm6, Xmm7, Xmm8, Xmm9, Xmm10, Xmm11, Xmm12, Xmm13, Xmm14, Xmm15
-	};
-
 private:
 	windbg_engine_linker windbg_linker_;
 	std::list<MEMORY_BASIC_INFORMATION64> memory_list_;

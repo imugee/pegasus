@@ -40,7 +40,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 {
 	if (type == UC_MEM_WRITE_UNMAPPED || type == UC_MEM_READ_UNMAPPED)
 	{
-		dprintf("um=%08x\n", address);
+		//dprintf("um=%08x\n", address);
 		emulation_debugger::page unknown_page;
 		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 		std::shared_ptr<void> dump_closer(unknown_dump, free);
@@ -86,14 +86,22 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 
 static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
+	//dprintf("um=%08x\n", address);
+
 	emulation_debugger::page unknown_page;
 	unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 	std::shared_ptr<void> dump_closer(unknown_dump, free);
 
 	if (unknown_dump)
 	{
-		uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL);
-		uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
+		//dprintf("find!\n");
+		uc_err err;
+		if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
+		{
+			dprintf("um err %d..\n", err);
+			if (uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size) != 0)
+				dprintf("...\n");
+		}
 		return;
 	}
 }
@@ -117,6 +125,12 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{;e,o;;;}")
 	if (!g_emulator)
 		return;
 
-	if (!g_emulator->trace32(nullptr, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
-		dprintf("err..\n");
+	while(1)
+	{
+		if (!g_emulator->trace32(nullptr, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+		{
+			dprintf("err..\n");
+			break;
+		}
+	}
 }
