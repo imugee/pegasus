@@ -15,14 +15,38 @@
 #include <windbg_engine_linker.h>
 #include <emulator.h>
 
+#include <distorm/include/distorm.h>
+#include <distorm/include/mnemonics.h>
+
 #pragma comment(lib, "unicorn_static_x64.lib")
 
-emulation_debugger::emulation_debugger()
+emulation_debugger::emulation_debugger() : is_64_(false)
 {
 }
 ///
 ///
 ///
+bool __stdcall emulation_debugger::disasm(void *code, size_t size, uint32_t dt, void *out)
+{
+	unsigned int dc;
+	_CodeInfo ci;
+	_DInst *di = (_DInst *)out;
+
+	ci.code = (unsigned char *)code;
+	ci.codeLen = (int)size;
+	ci.codeOffset = (_OffsetType)(unsigned long long *)code;
+	ci.dt = (_DecodeType)dt;
+	ci.features = DF_NONE;
+
+	if (distorm_decompose(&ci, di, 1, &dc) == DECRES_INPUTERR)
+		return false;
+
+	if (dc < 1)
+		return false;
+
+	return true;
+}
+
 size_t __stdcall emulation_debugger::alignment(size_t region_size, unsigned long image_aligin)
 {
 	size_t alignment = region_size;
@@ -38,6 +62,93 @@ size_t __stdcall emulation_debugger::alignment(size_t region_size, unsigned long
 	alignment = image_aligin - alignment;
 
 	return 	alignment += region_size;
+}
+
+bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long long ip)
+{
+	BYTE dump[1024];
+	_DInst di;
+	uc_engine *uc = (uc_engine *)engine;
+
+	if(uc_mem_read(uc, ip, dump, 1024) != 0)
+		return false;
+
+	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
+		return false;
+
+	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[1].type != O_DISP || di.size != 9 || di.disp != 0x30)
+		return false;
+
+	dprintf("mv gs b\n");
+
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+
+	if(uc_reg_write(uc, distorm_to_uc[di.ops[0].index], &teb_64_address_) != 0)
+		return false;
+
+	context_.Rip = ip + di.size;
+	dprintf("mv gs e\n");
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine, unsigned long long ip)
+{
+	BYTE dump[1024];
+	_DInst di;
+	uc_engine *uc = (uc_engine *)engine;
+
+	if (uc_mem_read(uc, ip, dump, 1024) != 0)
+		return false;
+
+	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
+		return false;
+
+	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[0].index != R_SS || di.size != 3)
+		return false;
+
+	dprintf("mv ss b\n");
+
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+	DWORD ss = 0x88;
+	if (uc_reg_write(uc, distorm_to_uc[di.ops[1].index], &ss) != 0)
+		return false;
+
+	dprintf("mv ss e\n");
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine, unsigned long long ip)
+{
+	BYTE dump[1024];
+	_DInst di;
+	uc_engine *uc = (uc_engine *)engine;
+
+	if (uc_mem_read(uc, ip, dump, 1024) != 0)
+		return false;
+
+	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
+		return false;
+
+	if (di.opcode != I_JMP_FAR || di.ops[0].type != O_SMEM || di.size != 3)
+		return false;
+
+	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+
+	unsigned long long return_register = 0;
+	if (uc_reg_read(uc, distorm_to_uc[di.ops[0].index], &return_register) != 0)
+		return false;
+
+	unsigned long value = 0;
+	if (uc_mem_read(uc, return_register, &value, sizeof(value)) != 0)
+		return false;
+
+	context_.Rip = value;
+	is_64_ = false;
+	dprintf("wow ret..\n");
+
+	return true;
 }
 ///
 ///
@@ -63,7 +174,7 @@ bool __stdcall emulation_debugger::file_query_ring3(unsigned long long value, wc
 		size_t region_size = (wfd.nFileSizeHigh * ((unsigned)0x100000000) + wfd.nFileSizeLow);
 		unsigned long long end_address = base_address + region_size;
 
-		if (base_address <= value && value <= end_address)
+		if (base_address <= value && value < end_address)
 		{
 			if (file_name && size)
 			{
@@ -176,7 +287,7 @@ bool __stdcall emulation_debugger::capture()
 		memset(&mbi, 0, sizeof(mbi));
 	}
 
-	if (!windbg_linker_.get_context(&context_, sizeof(context_)))
+	if (!windbg_linker_.get_context(&context_, sizeof(context_))) // 32bit 디버깅 버그 확인 => sf2.exe
 		return false;
 
 	//if (!windbg_linker_.write_binary(ring3_path_, L"context", (unsigned char *)&context_, sizeof(context_)))
@@ -230,10 +341,20 @@ bool __stdcall emulation_debugger::load_ex(void *engine)
 	if (!stack_dump) return false;
 	std::shared_ptr<void> stack_dump_closer(stack_dump, free);
 
+	///
+	///
+	///
 	code_dump = load_page(context_.Rip, &code.base, &code.size);
 	if (!code_dump) return false;
 	std::shared_ptr<void> code_dump_closer(code_dump, free);
-
+	//for (int i = 0; i < code.size; ++i)
+	//{
+	//	if (i % 16 == 0) dprintf("\n");
+	//	dprintf("%02x ", code_dump[i]);
+	//}
+	///
+	///
+	///
 	teb32_dump = load_page(teb_address_, &teb32_page.base, &teb32_page.size);
 	if (!teb32_dump) return false;
 	std::shared_ptr<void> teb_dump_closer(teb32_dump, free);
@@ -279,7 +400,6 @@ bool __stdcall emulation_debugger::load_ex(void *engine)
 	if (!load(engine, stack.base, stack.size, stack_dump, stack.size))
 		return false;
 
-	//SegmentDescriptor global_descriptor[31];
 	uc_x86_mmr gdtr;
 	gdtr.base = gdt_base_;
 	gdtr.limit = (sizeof(SegmentDescriptor) * 31) - 1;
@@ -627,11 +747,66 @@ bool __stdcall emulation_debugger::attach()
 
 	return true;
 }
-///
-///
-///
-bool __stdcall emulation_debugger::trace32(void *code_callback, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback)
+
+void __stdcall emulation_debugger::print_register()
 {
+	CONTEXT context = context_;
+
+	if (is_64_cpu())
+	{
+		dprintf("rax=%0*I64x rbx=%0*I64x rcx=%0*I64x rdx=%0*I64x\n", 16, context.Rax, 16, context.Rbx, 16, context.Rcx, 16, context.Rdx);
+		dprintf("rsi=%0*I64x rdi=%0*I64x\n", 16, context.Rsi, 16, context.Rdi);
+		dprintf("rsp=%0*I64x rbp=%0*I64x\n", 16, context.Rsp, 16, context.Rbp);
+		dprintf("rip=%0*I64x\n", 16, context.Rip);
+		dprintf("\n");
+		dprintf("r8=%0*I64x r9=%0*I64x r10=%0*I64x\n", 16, context.R8, 16, context.R9, 16, context.R10);
+		dprintf("r11=%0*I64x r12=%0*I64x r13=%0*I64x\n", 16, context.R11, 16, context.R12, 16, context.R13);
+		dprintf("r14=%0*I64x r15=%0*I64x\n", 16, context.R14, 16, context.R15);
+		dprintf("efl=%0*I64x\n", 16, context.EFlags);
+		dprintf("CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d%d NT=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d\n"
+			, GetFlagBit(context.EFlags, CF_INDEX), GetFlagBit(context.EFlags, PF_INDEX)
+			, GetFlagBit(context.EFlags, AF_INDEX), GetFlagBit(context.EFlags, ZF_INDEX)
+			, GetFlagBit(context.EFlags, SF_INDEX), GetFlagBit(context.EFlags, TF_INDEX)
+			, GetFlagBit(context.EFlags, IF_INDEX), GetFlagBit(context.EFlags, DF_INDEX)
+			, GetFlagBit(context.EFlags, OF_INDEX), GetFlagBit(context.EFlags, IOPL_INDEX_1), GetFlagBit(context.EFlags, IOPL_INDEX_2)
+			, GetFlagBit(context.EFlags, NT_INDEX), GetFlagBit(context.EFlags, RF_INDEX), GetFlagBit(context.EFlags, VM_INDEX)
+			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
+		dprintf("cs=%02x ds=%02x es=%02x fs=%02x gs=%02x ss=%02x\n", context.SegCs, context.SegDs, context.SegEs, context.SegFs, context.SegGs, context.SegSs);
+
+		char mnemonic[1024] = { 0, };
+		void *eip = (void *)context.Rip;
+
+		Disasm(&context.Rip, mnemonic, 0);
+		dprintf("%s\n", mnemonic);
+	}
+	else
+	{
+		dprintf("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n", context.Rax, context.Rbx, context.Rcx, context.Rdx, context.Rsi, context.Rdi);
+		dprintf("eip=%08x esp=%08x ebp=%08x\n", context.Rip, context.Rsp, context.Rbp);
+		dprintf("efl=%08x ", context.EFlags);
+		dprintf("CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d%d NT=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d\n"
+			, GetFlagBit(context.EFlags, CF_INDEX), GetFlagBit(context.EFlags, PF_INDEX)
+			, GetFlagBit(context.EFlags, AF_INDEX), GetFlagBit(context.EFlags, ZF_INDEX)
+			, GetFlagBit(context.EFlags, SF_INDEX), GetFlagBit(context.EFlags, TF_INDEX)
+			, GetFlagBit(context.EFlags, IF_INDEX), GetFlagBit(context.EFlags, DF_INDEX)
+			, GetFlagBit(context.EFlags, OF_INDEX), GetFlagBit(context.EFlags, IOPL_INDEX_1), GetFlagBit(context.EFlags, IOPL_INDEX_2)
+			, GetFlagBit(context.EFlags, NT_INDEX), GetFlagBit(context.EFlags, RF_INDEX), GetFlagBit(context.EFlags, VM_INDEX)
+			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
+		dprintf("cs=%02x ss=%02x ds=%02x es=%02x fs=%02x gs=%02x\n", context.SegCs, context.SegSs, context.SegDs, context.SegEs, context.SegFs, context.SegGs);
+
+		char mnemonic[1024] = { 0, };
+		void *eip = (void *)context.Rip;
+
+		Disasm(&context.Rip, mnemonic, 0);
+		dprintf("%s\n", mnemonic);
+	}
+}
+///
+///
+///
+bool __stdcall emulation_debugger::trace32(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback)
+{
+	bool trace_state = true;
 	uc_engine *uc = nullptr;
 	if (uc_open(UC_ARCH_X86, UC_MODE_32, &uc) != 0)
 		return false;
@@ -651,43 +826,120 @@ bool __stdcall emulation_debugger::trace32(void *code_callback, void *unmap_call
 	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
 	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
 
-	//unsigned char dump[1024];
-	//if (uc_mem_read(uc, teb_address_, dump, 1024) == 0)
-	//{
-	//	MEMORY_BASIC_INFORMATION64 mbi;
-	//	unsigned long *teb_0ffset_30 = (unsigned long *)&dump[0x18];
-
-	//	windbg_linker_.virtual_query(teb_address_, &mbi);
-	//	//dprintf("teb=%08x, mbi=%08x %08x\n", *teb_0ffset_30, mbi.BaseAddress, mbi.RegionSize);
-
-	//	//for (int i = 0; i < 1024; ++i)
-	//	//{
-	//	//	if (i % 16 == 0) dprintf("\n");
-	//	//	dprintf("%02x ", dump[i]);
-	//	//}
-	//	//dprintf("\n");
-	//}
-
-	dprintf("rip=%08x\n", context_.Rip);
-
-	uc_err err;
-	if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x1000, 0, 1)) != 0)
+	do
 	{
-		if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err== UC_HOOK_MEM_FETCH_UNMAPPED)
+		unsigned char dump[16] = { 0, };
+		if (uc_mem_read(uc, context_.Rip, dump, 16) == 0 && dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0)
 		{
-			if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x1000, 0, 1)) == 0)
-				return true;
-		}
-		dprintf("err=%d\n", err);
+			unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
+			unsigned long syscall = *syscall_ptr;
 
-		return false;
-	}
+			is_64_ = true;
+			context_.Rip = syscall;
+			break;
+		}
+
+		uc_err err;
+		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) != 0)
+		{
+			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+			{
+				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) == 0)
+					continue;
+			}
+
+			//dprintf("rip=%08x\n", context_.Rip);
+			trace_state = false;
+		}
+
+		if (!read_x86_cpu_context(uc))
+			trace_state = false;
+
+		if (!trace_state)
+			break;
+
+		print_register();
+	} while (context_.Rip != bp && bp != 0);
 
 	if (!backup(uc))
 		return false;
 
-	if (!read_x86_cpu_context(uc))
+	if (!trace_state)
 		return false;
 
 	return true;
+}
+
+bool __stdcall emulation_debugger::trace64(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback)
+{
+	bool trace_state = true;
+	uc_engine *uc = nullptr;
+	if (uc_open(UC_ARCH_X86, UC_MODE_64, &uc) != 0)
+		return false;
+	std::shared_ptr<void> uc_closer(uc, uc_close);
+
+	if (!load_ex(uc))
+		return false;
+
+	if (!write_x64_cpu_context(uc))
+		return false;
+
+	uc_hook write_unmap_hook;
+	uc_hook read_unmap_hook;
+	uc_hook fetch_hook;
+
+	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
+
+	do
+	{
+		if (mnemonic_mov_gs(uc, context_.Rip))
+			continue;
+
+		uc_err err;
+		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) != 0)
+		{
+			if (mnemonic_mov_ss(uc, context_.Rip))
+				continue;
+
+			if (mnemonic_wow_ret(uc, context_.Rip))
+				break;
+
+			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+			{
+				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) == 0)
+					continue;
+			}
+
+			//dprintf("rip=%08x err=%d\n", context_.Rip, err);
+			trace_state = false;
+		}
+
+		if (!read_x64_cpu_context(uc))
+			trace_state = false;
+
+		if (!trace_state)
+			break;
+
+		print_register();
+	} while (context_.Rip != bp && bp != 0);
+
+	if (!backup(uc))
+		return false;
+
+	if (!trace_state)
+		return false;
+
+	return true;
+}
+
+CONTEXT __stdcall emulation_debugger::current_thread_context()
+{
+	return context_;
+}
+
+bool __stdcall emulation_debugger::is_64_cpu()
+{
+	return is_64_;
 }

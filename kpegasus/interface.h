@@ -57,8 +57,12 @@ namespace engine
 
 		virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size) = 0;
 
+		virtual bool __stdcall is_64_cpu() = 0;
 		virtual bool __stdcall attach() = 0;
-		virtual bool __stdcall trace32(void *code_callback, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback) = 0;
+		virtual bool __stdcall trace32(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback) = 0;
+		virtual bool __stdcall trace64(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback) = 0;
+
+		virtual CONTEXT __stdcall current_thread_context() = 0;
 		//virtual bool __stdcall is_64() = 0;
 		//virtual bool __stdcall check(unsigned long long address) = 0;
 		//virtual bool __stdcall link(unsigned long long address) = 0;

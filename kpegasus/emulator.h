@@ -22,6 +22,8 @@ private:
 
 	unsigned long long gdt_base_;
 
+	bool is_64_;
+
 	wchar_t ring0_path_[MAX_PATH];
 	wchar_t ring3_path_[MAX_PATH];
 
@@ -45,6 +47,11 @@ private:
 	virtual bool __stdcall read_x64_cpu_context(void *engine);
 
 	virtual bool __stdcall backup(void *engine);
+	bool __stdcall disasm(void *code, size_t size, uint32_t dt, void *out);
+	bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip);
+	bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip);
+	bool __stdcall mnemonic_wow_ret(void *engine, unsigned long long ip);
+	void __stdcall emulation_debugger::print_register();
 
 public:
 	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
@@ -53,8 +60,13 @@ public:
 public:
 	emulation_debugger();
 
+	virtual bool __stdcall is_64_cpu();
+
 	virtual bool __stdcall attach();
-	virtual bool __stdcall trace32(void *code_callback, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback);
+	virtual bool __stdcall trace32(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback);
+	virtual bool __stdcall trace64(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback);
+
+	virtual CONTEXT __stdcall current_thread_context();
 };
 
 #define DISTORM_TO_UC_REGS \

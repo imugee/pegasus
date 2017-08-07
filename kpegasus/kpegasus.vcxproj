@@ -137,6 +137,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;KPEGASUS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\include\uc;$(SolutionDir)\include;$(SolutionDir)\kpegasus;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,6 +149,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\include\distorm\src\decoder.c" />
+    <ClCompile Include="..\include\distorm\src\distorm.c" />
+    <ClCompile Include="..\include\distorm\src\instructions.c" />
+    <ClCompile Include="..\include\distorm\src\insts.c" />
+    <ClCompile Include="..\include\distorm\src\mnemonics.c" />
+    <ClCompile Include="..\include\distorm\src\operands.c" />
+    <ClCompile Include="..\include\distorm\src\prefix.c" />
+    <ClCompile Include="..\include\distorm\src\textdefs.c" />
+    <ClCompile Include="..\include\distorm\src\wstring.c" />
     <ClCompile Include="emul.cpp" />
     <ClCompile Include="emulator.cpp" />
     <ClCompile Include="engextcpp.cpp" />
@@ -156,6 +166,15 @@
     <ClCompile Include="windbg_engine_linker.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\distorm\src\config.h" />
+    <ClInclude Include="..\include\distorm\src\decoder.h" />
+    <ClInclude Include="..\include\distorm\src\instructions.h" />
+    <ClInclude Include="..\include\distorm\src\insts.h" />
+    <ClInclude Include="..\include\distorm\src\operands.h" />
+    <ClInclude Include="..\include\distorm\src\prefix.h" />
+    <ClInclude Include="..\include\distorm\src\textdefs.h" />
+    <ClInclude Include="..\include\distorm\src\wstring.h" />
+    <ClInclude Include="..\include\distorm\src\x86defs.h" />
     <ClInclude Include="emulator.h" />
     <ClInclude Include="engextcpp.hpp" />
     <ClInclude Include="engine.h" />

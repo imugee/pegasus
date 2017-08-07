@@ -19,6 +19,7 @@ public:
 	EmulationEngine();
 
 	void attach();
+	void detach();
 	void close();
 	void trace();
 };

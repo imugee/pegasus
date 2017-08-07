@@ -45,6 +45,8 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 		std::shared_ptr<void> dump_closer(unknown_dump, free);
 
+		//dprintf("um base=%08x %08x\n", unknown_page.base, unknown_page.size);
+
 		if (unknown_dump)
 		{
 			uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL);
@@ -87,24 +89,25 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
 	//dprintf("um=%08x\n", address);
-
-	emulation_debugger::page unknown_page;
-	unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
-	std::shared_ptr<void> dump_closer(unknown_dump, free);
-
-	if (unknown_dump)
+	if (type == UC_MEM_FETCH_UNMAPPED)
 	{
-		//dprintf("find!\n");
-		uc_err err;
-		if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
+		emulation_debugger::page unknown_page;
+		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
+		std::shared_ptr<void> dump_closer(unknown_dump, free);
+
+		if (unknown_dump)
 		{
-			dprintf("um err %d..\n", err);
-			if (uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size) != 0)
-				dprintf("...\n");
+			//dprintf("find!\n");
+			uc_err err;
+			if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
+			{
+				uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
+			}
 		}
-		return;
 	}
 }
+
+
 ///
 ///
 ///
@@ -120,17 +123,32 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 		dprintf("attach process\n");
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{;e,o;;;}")
+EXT_CLASS_COMMAND(EmulationEngine, detach, "", "{;e,o;;;}")
+{
+	g_emulator.reset();
+}
+
+EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;pid;;}")
 {
 	if (!g_emulator)
 		return;
+	unsigned long long bp = GetArgU64("bp", FALSE);
+	//dprintf("bp = %08x\n", bp);
 
-	while(1)
+	if(!g_emulator->is_64_cpu())
 	{
-		if (!g_emulator->trace32(nullptr, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
-		{
-			dprintf("err..\n");
-			break;
-		}
+		if (g_Ext->IsCurMachine64())
+			g_Ext->ExecuteSilent("!wow64exts.sw");
+
+		if (!g_emulator->trace32(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+			dprintf("break\n");
+	}
+	else
+	{
+		if (g_Ext->IsCurMachine32())
+			g_Ext->ExecuteSilent("!wow64exts.sw");
+
+		if (!g_emulator->trace64(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+			dprintf("break\n");
 	}
 }
