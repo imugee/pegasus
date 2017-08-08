@@ -63,24 +63,9 @@ namespace engine
 		virtual bool __stdcall trace64(void *code_callback, unsigned long long bp, void *unmap_callback, void *fetch_callback, void *read_callback, void *write_callback) = 0;
 
 		virtual CONTEXT __stdcall current_thread_context() = 0;
-		//virtual bool __stdcall is_64() = 0;
-		//virtual bool __stdcall check(unsigned long long address) = 0;
-		//virtual bool __stdcall link(unsigned long long address) = 0;
-		//virtual bool __stdcall load(unsigned long long load_address, size_t load_size, void *dump, size_t write_size) = 0;
-
-		//virtual bool __stdcall read(unsigned long long address, void *dump, size_t dump_size) = 0;
-		//virtual bool __stdcall write(unsigned long long address, void *dump, size_t dump_size) = 0;
-		//virtual bool __stdcall read_register(unsigned int id, unsigned long long *value) = 0;
-		//virtual bool __stdcall write_register(unsigned int id, unsigned long long value) = 0;
-		//virtual bool __stdcall read_context(void *context, size_t context_size) = 0;
-
-		////virtual bool __stdcall push(int value) = 0;
-		////virtual int __stdcall pop() = 0;
-
-		//virtual bool __stdcall attach() = 0;
-		//virtual bool __stdcall trace() = 0;
-
-		//virtual bool __stdcall cpu_switch() = 0;
+		virtual bool __stdcall clear_ring3() = 0;
+		virtual void __stdcall current_regs() = 0;
+		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
 	};
 
 	class linker

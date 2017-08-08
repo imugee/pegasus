@@ -20,8 +20,9 @@ public:
 
 	void attach();
 	void detach();
-	void close();
+
 	void trace();
+	void regs();
 };
 
 #endif

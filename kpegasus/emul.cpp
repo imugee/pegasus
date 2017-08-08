@@ -19,33 +19,13 @@
 
 std::shared_ptr<engine::debugger> g_emulator;
 
-size_t __stdcall alignment(size_t region_size, unsigned long image_aligin)
-{
-	size_t alignment = region_size;
-
-	while (1)
-	{
-		if (alignment > image_aligin)
-			alignment -= image_aligin;
-		else
-			break;
-	}
-
-	alignment = image_aligin - alignment;
-
-	return 	alignment += region_size;
-}
-
 static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
 	if (type == UC_MEM_WRITE_UNMAPPED || type == UC_MEM_READ_UNMAPPED)
 	{
-		//dprintf("um=%08x\n", address);
 		emulation_debugger::page unknown_page;
 		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 		std::shared_ptr<void> dump_closer(unknown_dump, free);
-
-		//dprintf("um base=%08x %08x\n", unknown_page.base, unknown_page.size);
 
 		if (unknown_dump)
 		{
@@ -61,7 +41,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		if ((err = uc_mem_read(uc, address, dump, 16)) == 0)
 			return;
 
-		size_t resize = alignment((size_t)address, 0x1000);
+		size_t resize = g_emulator->alignment((size_t)address, 0x1000);
 		uc_mem_region *um = nullptr;
 		uint32_t count = 0;
 
@@ -82,13 +62,12 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		unsigned long long base = b.end + 1;
 		size_t size = resize - base;
 
-		uc_mem_map(uc, base, size, UC_PROT_ALL);
+		err = uc_mem_map(uc, base, size, UC_PROT_ALL);
 	}
 }
 
 static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
-	//dprintf("um=%08x\n", address);
 	if (type == UC_MEM_FETCH_UNMAPPED)
 	{
 		emulation_debugger::page unknown_page;
@@ -97,7 +76,6 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 
 		if (unknown_dump)
 		{
-			//dprintf("find!\n");
 			uc_err err;
 			if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
 			{
@@ -106,15 +84,16 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		}
 	}
 }
-
-
 ///
 ///
 ///
 EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 {
 	if (g_emulator)
+	{
+		detach();
 		g_emulator.reset();
+	}
 
 	if (!engine::create<emulation_debugger>(g_emulator))
 		return;
@@ -125,22 +104,33 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 
 EXT_CLASS_COMMAND(EmulationEngine, detach, "", "{;e,o;;;}")
 {
+	if (!g_emulator)
+		return;
+
+	if (g_emulator->clear_ring3())
+		dprintf("clear ring3 partition\n");
+	else
+		dprintf("clear fail..\n");
+
 	g_emulator.reset();
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;pid;;}")
+EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}")
 {
-	if (!g_emulator)
-		return;
+	bool strange = false;
 	unsigned long long bp = GetArgU64("bp", FALSE);
-	//dprintf("bp = %08x\n", bp);
 
 	if(!g_emulator->is_64_cpu())
 	{
 		if (g_Ext->IsCurMachine64())
 			g_Ext->ExecuteSilent("!wow64exts.sw");
 
-		if (!g_emulator->trace32(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+		if (g_emulator->trace32(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+		{
+			if (g_emulator->is_64_cpu())
+				dprintf("switch wow64cpu=>64bit\n");
+		}
+		else
 			dprintf("break\n");
 	}
 	else
@@ -148,7 +138,20 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;pid;;}")
 		if (g_Ext->IsCurMachine32())
 			g_Ext->ExecuteSilent("!wow64exts.sw");
 
-		if (!g_emulator->trace64(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+		if (g_emulator->trace64(nullptr, bp, hook_unmap_memory, hook_fetch_memory, nullptr, nullptr))
+		{
+			if (g_emulator->is_64_cpu())
+				dprintf("switch wow64cpu=>64bit\n");
+		}
+		else
 			dprintf("break\n");
 	}
+}
+
+EXT_CLASS_COMMAND(EmulationEngine, regs, "", "{;e,o;;;}")
+{
+	if (!g_emulator)
+		return;
+	
+	g_emulator->current_regs();
 }

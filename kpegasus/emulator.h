@@ -56,6 +56,8 @@ private:
 public:
 	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
 	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
+	virtual bool __stdcall clear_ring3();
+	virtual void __stdcall current_regs();
 
 public:
 	emulation_debugger();

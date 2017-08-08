@@ -79,15 +79,12 @@ bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long l
 	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[1].type != O_DISP || di.size != 9 || di.disp != 0x30)
 		return false;
 
-	dprintf("mv gs b\n");
-
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
 
 	if(uc_reg_write(uc, distorm_to_uc[di.ops[0].index], &teb_64_address_) != 0)
 		return false;
 
 	context_.Rip = ip + di.size;
-	dprintf("mv gs e\n");
 
 	return true;
 }
@@ -107,14 +104,10 @@ bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine, unsigned long l
 	if (di.opcode != I_MOV || di.ops[0].type != O_REG || di.ops[0].index != R_SS || di.size != 3)
 		return false;
 
-	dprintf("mv ss b\n");
-
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
 	DWORD ss = 0x88;
 	if (uc_reg_write(uc, distorm_to_uc[di.ops[1].index], &ss) != 0)
 		return false;
-
-	dprintf("mv ss e\n");
 
 	return true;
 }
@@ -146,7 +139,6 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine, unsigned long 
 
 	context_.Rip = value;
 	is_64_ = false;
-	dprintf("wow ret..\n");
 
 	return true;
 }
@@ -186,6 +178,45 @@ bool __stdcall emulation_debugger::file_query_ring3(unsigned long long value, wc
 	} while (FindNextFile(h_file, &wfd));
 
 	return false;
+}
+
+bool __stdcall emulation_debugger::clear_ring3()
+{
+	WIN32_FIND_DATA wfd;
+	wchar_t path[MAX_PATH] = { 0, };
+	unsigned int fail_count = 0;
+
+	StringCbCopy(path, MAX_PATH, ring3_path_);
+	StringCbCat(path, MAX_PATH, L"\\*.*");
+
+	HANDLE h_file = FindFirstFile(path, &wfd);
+
+	if (h_file == INVALID_HANDLE_VALUE)
+		return false;
+	std::shared_ptr<void> file_closer(h_file, CloseHandle);
+
+	do
+	{
+		if (!wcsstr(wfd.cFileName, L".") && !wcsstr(wfd.cFileName, L".."))
+		{
+			wchar_t target[MAX_PATH];
+
+			StringCbCopy(target, MAX_PATH, ring3_path_);
+			StringCbCat(target, MAX_PATH, L"\\");
+			StringCbCat(target, MAX_PATH, wfd.cFileName);
+
+			if (!DeleteFile(target))
+			{
+				dprintf("%ls, %08x\n", target, GetLastError());
+				++fail_count;
+			}
+		}
+	} while (FindNextFile(h_file, &wfd));
+
+	if (fail_count > 3)
+		return false;
+
+	return true;
 }
 
 unsigned char * __stdcall emulation_debugger::load_page(unsigned long long value, unsigned long long *base, size_t *size)
@@ -347,11 +378,6 @@ bool __stdcall emulation_debugger::load_ex(void *engine)
 	code_dump = load_page(context_.Rip, &code.base, &code.size);
 	if (!code_dump) return false;
 	std::shared_ptr<void> code_dump_closer(code_dump, free);
-	//for (int i = 0; i < code.size; ++i)
-	//{
-	//	if (i % 16 == 0) dprintf("\n");
-	//	dprintf("%02x ", code_dump[i]);
-	//}
 	///
 	///
 	///
@@ -745,6 +771,8 @@ bool __stdcall emulation_debugger::attach()
 	if (is_32)
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 
+	print_register();
+
 	return true;
 }
 
@@ -840,15 +868,14 @@ bool __stdcall emulation_debugger::trace32(void *code_callback, unsigned long lo
 		}
 
 		uc_err err;
-		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) != 0)
+		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x100, 0, 1)) != 0)
 		{
 			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
 			{
-				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) == 0)
+				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x100, 0, 1)) == 0)
 					continue;
 			}
 
-			//dprintf("rip=%08x\n", context_.Rip);
 			trace_state = false;
 		}
 
@@ -857,7 +884,6 @@ bool __stdcall emulation_debugger::trace32(void *code_callback, unsigned long lo
 
 		if (!trace_state)
 			break;
-
 		print_register();
 	} while (context_.Rip != bp && bp != 0);
 
@@ -894,11 +920,11 @@ bool __stdcall emulation_debugger::trace64(void *code_callback, unsigned long lo
 
 	do
 	{
+		uc_err err;
 		if (mnemonic_mov_gs(uc, context_.Rip))
 			continue;
 
-		uc_err err;
-		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) != 0)
+		if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x100, 0, 1)) != 0)
 		{
 			if (mnemonic_mov_ss(uc, context_.Rip))
 				continue;
@@ -908,11 +934,10 @@ bool __stdcall emulation_debugger::trace64(void *code_callback, unsigned long lo
 
 			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
 			{
-				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x10, 0, 1)) == 0)
+				if ((err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x100, 0, 1)) == 0)
 					continue;
 			}
 
-			//dprintf("rip=%08x err=%d\n", context_.Rip, err);
 			trace_state = false;
 		}
 
@@ -943,3 +968,9 @@ bool __stdcall emulation_debugger::is_64_cpu()
 {
 	return is_64_;
 }
+
+void __stdcall emulation_debugger::current_regs()
+{
+	print_register();
+}
+
