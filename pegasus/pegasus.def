@@ -1,4 +1,4 @@
-LIBRARY KPEGASUS
+LIBRARY PEGASUS
 
 EXPORTS
 	; ExtCpp framework.
@@ -12,7 +12,7 @@ EXPORTS
 
 	; emul
 	attach
-	detach
+	;detach
 	trace
-	regs
+	;regs
 

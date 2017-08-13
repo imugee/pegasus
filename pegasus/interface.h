@@ -48,31 +48,24 @@ typedef struct _SegmentDescriptor {
 }SegmentDescriptor, *PSegmentDescriptor;
 #pragma pack(pop)
 
-namespace binary
+namespace engine
 {
 	class debugger
 	{
 	public:
 		virtual ~debugger() {}
 
-		virtual bool __stdcall is_64() = 0;
-		virtual bool __stdcall check(unsigned long long address) = 0;
-		virtual bool __stdcall link(unsigned long long address) = 0;
-		virtual bool __stdcall load(unsigned long long load_address, size_t load_size, void *dump, size_t write_size) = 0;
+		virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size) = 0;
 
-		virtual bool __stdcall read(unsigned long long address, void *dump, size_t dump_size) = 0;
-		virtual bool __stdcall write(unsigned long long address, void *dump, size_t dump_size) = 0;
-		virtual bool __stdcall read_register(unsigned int id, unsigned long long *value) = 0;
-		virtual bool __stdcall write_register(unsigned int id, unsigned long long value) = 0;
-		virtual bool __stdcall read_context(void *context, size_t context_size) = 0;
-
-		//virtual bool __stdcall push(int value) = 0;
-		//virtual int __stdcall pop() = 0;
-
+		virtual bool __stdcall is_64_cpu() = 0;
 		virtual bool __stdcall attach() = 0;
-		virtual bool __stdcall trace() = 0;
+		virtual bool __stdcall trace(void *mem) = 0;
 
-		virtual bool __stdcall cpu_switch() = 0;
+		virtual CONTEXT __stdcall current_thread_context() = 0;
+		virtual bool __stdcall clear_ring3() = 0;
+		virtual void __stdcall current_regs() = 0;
+		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
+		virtual void * __stdcall get_windbg_linker() = 0;
 	};
 
 	class linker
@@ -84,14 +77,19 @@ namespace binary
 		virtual unsigned long long __stdcall get_teb_address() = 0;
 		virtual unsigned long long __stdcall get_peb_address() = 0;
 
-		virtual bool __stdcall virtual_query(uint64_t address, void *context, size_t context_size) = 0;
-		virtual bool __stdcall virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi) = 0;
-		virtual unsigned long __stdcall read_memory(uint64_t address, void *buffer, size_t buffer_size) = 0;
+		virtual bool __stdcall virtual_query(unsigned long long address, void *context, size_t context_size) = 0;
+		virtual bool __stdcall virtual_query(unsigned long long address, MEMORY_BASIC_INFORMATION64 *mbi) = 0;
+		virtual unsigned long __stdcall read_memory(unsigned long long address, void *buffer, size_t buffer_size) = 0;
+
+		virtual bool __stdcall set_debuggee_process(unsigned long pid) = 0;
+		virtual bool __stdcall set_debuggee_thread(unsigned long tid) = 0;
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
-		
+
 		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
 		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
+
+		virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size) = 0;
 	};
 
 	template <typename T1, class T2> bool __stdcall create(std::shared_ptr<T2> &u);
@@ -100,7 +98,7 @@ namespace binary
 ///
 ///
 template <typename T1, class T2>
-bool __stdcall binary::create(std::shared_ptr<T2> &u)
+bool __stdcall engine::create(std::shared_ptr<T2> &u)
 {
 	try
 	{

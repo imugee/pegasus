@@ -18,18 +18,8 @@ void alloc()
 		VirtualFree(address, 1024, MEM_FREE);
 }
 
-void fs_test()
-{
-	__asm
-	{
-		mov eax, fs:[0]
-		mov eax, fs:[0x18]
-	}
-}
-
 void main()
 {
-	__asm call fs_test
 	load();
 	printf("test\n");
 	Sleep(1000);

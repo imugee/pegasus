@@ -1,69 +1,94 @@
-#ifndef __DEFINE_PEGASUS_EMULATOR_HEADER__
-#define __DEFINE_PEGASUS_EMULATOR_HEADER__
+#ifndef __DEFINE_PEGASUS_EMULATOR_HEADER
+#define __DEFINE_PEGASUS_EMULATOR_HEADER
 
-class Wow64EmulationDebugger : public binary::debugger
+typedef struct _EMULATOR_TRACE_
 {
-private:
-	void *emulator_x86_;
-	void *emulator_x64_;
+	unsigned long long break_point;
+	unsigned long mode;
+	void *code_callback;
+	void *unmap_callback;
+	void *fetch_callback;
+	void *read_callback;
+	void *write_callback;
+}trace_item;
 
+class emulation_debugger : public engine::debugger
+{
+public:
+	typedef struct emul_page
+	{
+		unsigned long long base = 0;
+		size_t size = 0;
+	}page;
+
+private:
+	windbg_engine_linker windbg_linker_;
+	std::list<MEMORY_BASIC_INFORMATION64> memory_list_;
+
+	CONTEXT context_;
 	unsigned long long teb_address_;
+	unsigned long long teb_64_address_;
 	unsigned long long peb_address_;
+	unsigned long long peb_64_address_;
 
 	unsigned long long gdt_base_;
-	unsigned long long ldt_base_;
-	unsigned long long idt_base_;
-	unsigned long long tss_base_;
 
-	unsigned int x64_flag_;
+	bool is_64_;
 
-private: // local&share
-	virtual void * __stdcall get_engine();
+	wchar_t ring0_path_[MAX_PATH];
+	wchar_t ring3_path_[MAX_PATH];
+
+private:
+	virtual bool __stdcall write_binary(unsigned long long address);
+	virtual bool __stdcall file_query_ring3(unsigned long long value, wchar_t *file_name, size_t *size);
+
+	virtual bool __stdcall is_wow64cpu();
+
+	virtual void __stdcall install();
+	virtual bool __stdcall setup();
+
+	virtual bool __stdcall load(void *engine, unsigned long long load_address, size_t load_size, void *dump, size_t write_size);
+	virtual bool __stdcall load_gdt(void *engine);
+	virtual bool __stdcall load_context(void *engine, unsigned long mode);
+
 	virtual void __stdcall set_global_descriptor(SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code);
-	virtual bool __stdcall create_global_descriptor_table(void *engine, void *context, size_t context_size);
-	virtual bool __stdcall load_ex(std::shared_ptr<binary::linker> windbg_linker);
-	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
+	virtual bool __stdcall create_global_descriptor_table();
 
-	virtual bool __stdcall mnemonic_mov_gs(unsigned long long ip);
-	virtual bool __stdcall mnemonic_mov_ss(unsigned long long ip);
-	virtual bool __stdcall mnemonic_wow_ret(unsigned long long ip);
-	virtual bool __stdcall disasm(void *code, size_t size, uint32_t dt, void *out);
+	virtual bool __stdcall write_x86_cpu_context(void *engine);
+	virtual bool __stdcall read_x86_cpu_context(void *engine);
 
-private: // x86 cpu
-	virtual bool __stdcall read_x86_cpu_context(CONTEXT *context);
-	virtual bool __stdcall write_x86_cpu_context(CONTEXT context);
-	virtual bool __stdcall attach_x86();
-	virtual bool __stdcall trace_x86();
-	virtual bool __stdcall switch_x86();
+	virtual bool __stdcall write_x64_cpu_context(void *engine);
+	virtual bool __stdcall read_x64_cpu_context(void *engine);
 
-private: // x64 cpu
-	virtual bool __stdcall read_x64_cpu_context(CONTEXT *context);
-	virtual bool __stdcall write_x64_cpu_context(CONTEXT context);
-	virtual bool __stdcall attach_x64();
-	virtual bool __stdcall trace_x64();
-	virtual bool __stdcall switch_x64();
+	virtual bool __stdcall backup(void *engine);
+
+	bool __stdcall disasm(void *code, size_t size, uint32_t dt, void *out);
+
+	bool __stdcall mnemonic_switch_wow64cpu(void *engine, trace_item item, void *new_engine);
+	bool __stdcall mnemonic_wow_ret(void *engine, trace_item item, void *new_engine);
+
+	bool __stdcall mnemonic_mov_gs(void *engine);
+	bool __stdcall mnemonic_mov_ss(void *engine);
+
+	void __stdcall emulation_debugger::print_register();
 
 public:
-	Wow64EmulationDebugger();
-	~Wow64EmulationDebugger();
+	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
+	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
+	virtual bool __stdcall clear_ring3();
+	virtual void __stdcall current_regs();
 
-	virtual bool __stdcall is_64();
-	
-	virtual bool __stdcall check(unsigned long long address);
-	virtual bool __stdcall link(unsigned long long address);
-	virtual bool __stdcall load(unsigned long long load_address, size_t load_size, void *dump, size_t write_size);
+public:
+	emulation_debugger() : is_64_(false) {}
 
-	virtual bool __stdcall read(unsigned long long address, void *dump, size_t dump_size);
-	virtual bool __stdcall write(unsigned long long address, void *dump, size_t dump_size);
-	
-	virtual bool __stdcall read_register(unsigned int id, unsigned long long *value);
-	virtual bool __stdcall write_register(unsigned int id, unsigned long long value);
-	
-	virtual bool __stdcall read_context(void *context, size_t context_size);
+	virtual bool __stdcall is_64_cpu();
 
 	virtual bool __stdcall attach();
-	virtual bool __stdcall trace();
-	virtual bool __stdcall cpu_switch();
+	virtual bool __stdcall trace(void *mem);
+
+	virtual CONTEXT __stdcall current_thread_context();
+
+	virtual void * __stdcall get_windbg_linker();
 };
 
 #define DISTORM_TO_UC_REGS \
@@ -81,7 +106,7 @@ UC_X86_REG_YMM0, UC_X86_REG_YMM1, UC_X86_REG_YMM2, UC_X86_REG_YMM3, UC_X86_REG_Y
 UC_X86_REG_CR0, UC_X86_REG_CR2, UC_X86_REG_CR3, UC_X86_REG_CR4, UC_X86_REG_CR8,\
 UC_X86_REG_DR0, UC_X86_REG_DR1, UC_X86_REG_DR2, UC_X86_REG_DR3, UC_X86_REG_DR6, UC_X86_REG_DR7
 
-typedef enum _pegasus_regs 
+typedef enum _pegasus_regs
 {
 	PR_RAX, PR_RCX, PR_RDX, PR_RBX, PR_RSP, PR_RBP, PR_RSI, PR_RDI, PR_RIP, PR_R8, PR_R9, PR_R10, PR_R11, PR_R12, PR_R13, PR_R14, PR_R15, PR_EFLAGS,
 	PR_XMM0, PR_XMM1, PR_XMM2, PR_XMM3, PR_XMM4, PR_XMM5, PR_XMM6, PR_XMM7, PR_XMM8, PR_XMM9, PR_XMM10, PR_XMM11, PR_XMM12, PR_XMM13, PR_XMM14, PR_XMM15,
@@ -101,4 +126,6 @@ UC_X86_REG_XMM0, UC_X86_REG_XMM1, UC_X86_REG_XMM2, UC_X86_REG_XMM3, UC_X86_REG_X
 UC_X86_REG_YMM0, UC_X86_REG_YMM1, UC_X86_REG_YMM2, UC_X86_REG_YMM3, UC_X86_REG_YMM4, UC_X86_REG_YMM5, UC_X86_REG_YMM6, UC_X86_REG_YMM7, UC_X86_REG_YMM8, UC_X86_REG_YMM9, UC_X86_REG_YMM10, UC_X86_REG_YMM11, UC_X86_REG_YMM12, UC_X86_REG_YMM13, UC_X86_REG_YMM14, UC_X86_REG_YMM15,\
 UC_X86_REG_ES, UC_X86_REG_CS, UC_X86_REG_SS, UC_X86_REG_DS, UC_X86_REG_FS, UC_X86_REG_GS
 
-#endif
+#endif // !__DEFINE_PEGASUS_EMULATOR_HEADER
+
+

@@ -42,7 +42,7 @@ private:
 	unsigned long long pid_;
 	unsigned long long eprocess_;
 
-	std::list<vad_node> vad_list_;
+	std::list<windbg_process::vad_node> vad_list_;
 	std::list<windbg_thread> thread_list_;
 
 private:
@@ -54,7 +54,7 @@ public:
 	~windbg_process();
 
 	void __stdcall set_process_information(unsigned long long eprocess, unsigned long long pid, ExtRemoteTyped eprocess_node);
-	std::list<vad_node> get_vad_list();
+	std::list<vad_node> __stdcall get_vad_list();
 	std::list<windbg_thread> __stdcall get_thread_list();
 
 	unsigned long long __stdcall get_pid() { return pid_; }
