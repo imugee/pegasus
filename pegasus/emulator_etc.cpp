@@ -81,11 +81,11 @@ void __stdcall emulation_debugger::print_register()
 			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
 		dprintf("cs=%02x ds=%02x es=%02x fs=%02x gs=%02x ss=%02x\n", context.SegCs, context.SegDs, context.SegEs, context.SegFs, context.SegGs, context.SegSs);
 
-		char mnemonic[1024] = { 0, };
-		void *eip = (void *)context.Rip;
+		//char mnemonic[1024] = { 0, };
+		//void *eip = (void *)context.Rip;
 
-		Disasm(&context.Rip, mnemonic, 0);
-		dprintf("%s\n", mnemonic);
+		//Disasm(&context.Rip, mnemonic, 0);
+		//dprintf("%s\n", mnemonic);
 #endif
 	}
 	else
@@ -108,14 +108,14 @@ void __stdcall emulation_debugger::print_register()
 			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
 		dprintf("cs=%02x ss=%02x ds=%02x es=%02x fs=%02x gs=%02x\n", context.SegCs, context.SegSs, context.SegDs, context.SegEs, context.SegFs, context.SegGs);
 
-		char mnemonic[1024] = { 0, };
-
-#ifdef _WIN64
-		Disasm(&context.Rip, mnemonic, 0);
-#else
-		Disasm((unsigned long long *)&context.Eip, mnemonic, 0);
-#endif
-		dprintf("%s\n", mnemonic);
+//		char mnemonic[1024] = { 0, };
+//
+//#ifdef _WIN64
+//		Disasm(&context.Rip, mnemonic, 0);
+//#else
+//		Disasm((unsigned long long *)&context.Eip, mnemonic, 0);
+//#endif
+//		dprintf("%s\n", mnemonic);
 	}
 }
 

@@ -169,27 +169,25 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}")
 {
 	bool strange = false;
 	unsigned long long bp = GetArgU64("bp", FALSE);
+	trace_item item;
 
 	if (!g_emulator->is_64_cpu())
 	{
-		trace_item item;
 		item.mode = UC_MODE_32;
 		item.code_callback = nullptr;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
 		item.break_point = bp;
-
-		g_emulator->trace(&item);
 	}
 	else
 	{
-		trace_item item;
 		item.mode = UC_MODE_64;
 		item.code_callback = nullptr;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
 		item.break_point = bp;
-
-		g_emulator->trace(&item);
 	}
+
+	g_emulator->trace(&item);
+	//g_Ext->m_Control->Execute(DEBUG_OUTCTL_AMBIENT, ".cls", DEBUG_EXECUTE_NOT_LOGGED);
 }

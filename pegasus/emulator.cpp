@@ -226,7 +226,8 @@ bool __stdcall emulation_debugger::trace(void *mem)
 		if (!trace_state)
 			break;
 
-		print_register();
+		//print_register();
+		print_code(context_.Rip, 10);
 #ifdef _WIN64
 	} while (context_.Rip != item->break_point && item->break_point != 0);
 #else

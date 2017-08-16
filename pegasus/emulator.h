@@ -70,7 +70,9 @@ private:
 	bool __stdcall mnemonic_mov_gs(void *engine);
 	bool __stdcall mnemonic_mov_ss(void *engine);
 
-	void __stdcall emulation_debugger::print_register();
+	unsigned long long before(unsigned long long offset);
+
+	void __stdcall print_register();
 
 public:
 	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
@@ -88,6 +90,7 @@ public:
 
 	virtual CONTEXT __stdcall current_thread_context();
 
+	void __stdcall print_code(unsigned long long ip, unsigned long line);
 	virtual void * __stdcall get_windbg_linker();
 };
 

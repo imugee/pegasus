@@ -213,3 +213,61 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine, trace_
 
 	return false;
 }
+
+unsigned long long emulation_debugger::before(unsigned long long offset)
+{
+	_DInst di;
+	unsigned char dump[32] = { 0, };
+	unsigned long long b = offset - 32;
+
+	do
+	{
+		if (!windbg_linker_.read_memory(b, dump, 32))
+			return 0;
+
+		if (disasm(dump, 32, Decode64Bits, &di))
+			b += di.size;
+		else
+			++b;
+
+	} while (b < offset && b != offset);
+
+	return b - di.size;
+}
+//
+//	https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/customizing-debugger-output-using-dml
+//
+void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned long line)
+{
+#ifdef _WIN64
+	unsigned long long index = ip;
+#else
+	unsigned long index = context_.Eip;
+#endif
+	_DInst di;
+	unsigned char dump[32] = { 0, };
+
+	di.size = 0;
+	for (unsigned int i = 0; i < line; ++i)
+		index = before(index);
+
+	char mnemonic[1024] = { 0, };
+	unsigned long size = 0;
+	unsigned long long next = 0;
+
+	dprintf("====================================================\n");
+	for(unsigned int i = 0; i<(line * 2 + 1); ++i)
+	{
+		if (g_Ext->m_Control->Disassemble(index, DEBUG_DISASM_EFFECTIVE_ADDRESS, mnemonic, 1024, &size, &next) == S_OK)
+		{
+			if(index == context_.Rip)
+				g_Ext->Dml("<b><col fg=\"emphfg\">%s</col></b>", mnemonic);
+			else
+				dprintf("%s", mnemonic);
+		}
+
+		index = next;
+	}
+	dprintf("====================================================\n");
+	print_register();
+}

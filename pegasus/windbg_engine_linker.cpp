@@ -386,3 +386,4 @@ bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table
 
 	return true;
 }
+
