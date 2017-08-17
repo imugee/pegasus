@@ -387,3 +387,8 @@ bool __stdcall windbg_engine_linker::get_process_table(void *table, size_t table
 	return true;
 }
 
+ void __stdcall windbg_engine_linker::clear_screen()
+{
+	for(int i = 0; i<15000; ++i)
+		dprintf("%c", 0x8);
+}

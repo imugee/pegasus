@@ -16,11 +16,13 @@
 #include <emulator.h>
 
 std::shared_ptr<engine::debugger> g_emulator;
+wchar_t g_log_path[MAX_PATH];
 
 static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
 	if (type == UC_MEM_WRITE_UNMAPPED || type == UC_MEM_READ_UNMAPPED)
 	{
+		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 		emulation_debugger::page unknown_page;
 		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 
@@ -29,7 +31,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 			if (uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL) == 0)
 			{
 				uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
-				dprintf("data:: load existing memory\n");
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
 			}
 
 			std::shared_ptr<void> dump_closer(unknown_dump, free);
@@ -37,7 +39,6 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		}
 		else
 		{
-			windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 			MEMORY_BASIC_INFORMATION64 mbi;
 
 			if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
@@ -48,7 +49,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 					if (uc_mem_map(uc, mbi.BaseAddress, mbi.RegionSize, UC_PROT_ALL) == 0)
 					{
 						uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
-						dprintf("data:: load new memory\n");
+						windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
 					}
 					std::shared_ptr<void> dump_closer(unknown_dump, free);
 
@@ -101,13 +102,13 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 
 			err = uc_mem_map(uc, base, size, UC_PROT_ALL);
 
-			if(err)
-				dprintf("data:: fail %d, %08x=>%08x %08x, %08x\n", err, address, base, size, resize);
+			if (err)
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data::fail %d, %08x = >%08x %08x, %08x\n", err, address, base, size, resize);
 			else
-				dprintf("data:: alloc memory %08x-%08x\n", base, end);
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, end);
 		}
 		else
-			dprintf("data:: alloc memory %08x-%08x\n", base, base + size);
+			windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, base + size);
 	}
 }
 
@@ -118,6 +119,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		emulation_debugger::page unknown_page;
 		unsigned char *unknown_dump = g_emulator->load_page(address, &unknown_page.base, &unknown_page.size);
 		std::shared_ptr<void> dump_closer(unknown_dump, free);
+		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 
 		if (unknown_dump)
 		{
@@ -125,7 +127,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 			if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
 			{
 				uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
-				dprintf("code:: load existing memory\n");
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
 			}
 		}
 		else
@@ -142,7 +144,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 					uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
 
 					std::shared_ptr<void> dump_closer(unknown_dump, free);
-					dprintf("code:: load new memory\n");
+					windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
 				}
 			}
 		}
@@ -162,11 +164,14 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 		return;
 
 	if (g_emulator->attach())
-		dprintf("attach process\n");
+		GetCurrentDirectory(MAX_PATH, g_log_path);
 }
 
 EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}")
 {
+	if (!g_emulator)
+		return;
+
 	bool strange = false;
 	unsigned long long bp = GetArgU64("bp", FALSE);
 	trace_item item;
@@ -189,5 +194,6 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}")
 	}
 
 	g_emulator->trace(&item);
-	//g_Ext->m_Control->Execute(DEBUG_OUTCTL_AMBIENT, ".cls", DEBUG_EXECUTE_NOT_LOGGED);
+	dprintf("\n	");
+	g_Ext->DmlCmdExec("step into\n", "!trace");
 }

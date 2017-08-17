@@ -88,6 +88,8 @@ public:
 	virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);
 
 	virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size);
+
+	virtual void __stdcall clear_screen();
 };
 
 #endif // !__DEFINE_PEGASUS_WINDBG_ENGINE_LINKER

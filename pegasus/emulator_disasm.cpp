@@ -247,6 +247,8 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	_DInst di;
 	unsigned char dump[32] = { 0, };
 
+	windbg_linker_.clear_screen();
+
 	di.size = 0;
 	for (unsigned int i = 0; i < line; ++i)
 		index = before(index);
@@ -255,19 +257,19 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	unsigned long size = 0;
 	unsigned long long next = 0;
 
-	dprintf("====================================================\n");
+	dprintf("\n");
 	for(unsigned int i = 0; i<(line * 2 + 1); ++i)
 	{
 		if (g_Ext->m_Control->Disassemble(index, DEBUG_DISASM_EFFECTIVE_ADDRESS, mnemonic, 1024, &size, &next) == S_OK)
 		{
 			if(index == context_.Rip)
-				g_Ext->Dml("<b><col fg=\"emphfg\">%s</col></b>", mnemonic);
+				g_Ext->Dml("<b><col fg=\"emphfg\">	%s</col></b>", mnemonic);
 			else
-				dprintf("%s", mnemonic);
+				dprintf("	%s", mnemonic);
 		}
 
 		index = next;
 	}
-	dprintf("====================================================\n");
-	print_register();
+	dprintf("\n");
+	//print_register();
 }

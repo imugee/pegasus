@@ -37,6 +37,7 @@ private:
 
 	wchar_t ring0_path_[MAX_PATH];
 	wchar_t ring3_path_[MAX_PATH];
+	wchar_t log_path_[MAX_PATH];
 
 private:
 	virtual bool __stdcall write_binary(unsigned long long address);

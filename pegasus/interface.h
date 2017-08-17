@@ -66,6 +66,8 @@ namespace engine
 		virtual void __stdcall current_regs() = 0;
 		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
 		virtual void * __stdcall get_windbg_linker() = 0;
+
+		virtual void __stdcall print_code(unsigned long long ip, unsigned long line) = 0;
 	};
 
 	class linker
@@ -90,6 +92,7 @@ namespace engine
 		virtual bool __stdcall read_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;
 
 		virtual bool __stdcall get_process_table(void *table, size_t table_size, size_t *read_size) = 0;
+		virtual void __stdcall clear_screen() = 0;
 	};
 
 	template <typename T1, class T2> bool __stdcall create(std::shared_ptr<T2> &u);

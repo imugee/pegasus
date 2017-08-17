@@ -28,10 +28,13 @@ void __stdcall emulation_debugger::install()
 {
 	wmemset(ring0_path_, 0, MAX_PATH);
 	wmemset(ring3_path_, 0, MAX_PATH);
+	wmemset(log_path_, 0, MAX_PATH);
 
 	GetCurrentDirectory(MAX_PATH, ring0_path_);
 	StringCbCat(ring0_path_, MAX_PATH, L"\\ring0");
 	CreateDirectory(ring0_path_, FALSE);
+
+	StringCbCopy(log_path_, MAX_PATH, ring0_path_);
 
 	StringCbCopy(ring3_path_, MAX_PATH, ring0_path_);
 	StringCbCat(ring3_path_, MAX_PATH, L"\\ring3");
@@ -159,6 +162,7 @@ bool __stdcall emulation_debugger::trace(void *mem)
 	uc_hook fetch_hook;
 	uc_engine *uc = nullptr;
 	trace_item *item = (trace_item *)mem;
+	bool is_print = false;
 
 	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
 		return false;
@@ -205,8 +209,6 @@ bool __stdcall emulation_debugger::trace(void *mem)
 #endif
 				if (err == 0)
 					continue;
-
-				dprintf("please try again\n");
 			}
 
 			trace_state = false;
@@ -223,11 +225,13 @@ bool __stdcall emulation_debugger::trace(void *mem)
 				break;
 		}
 
+		//print_code(context_.Rip, 15);
+		print_register();
+		is_print = true;
+
 		if (!trace_state)
 			break;
 
-		//print_register();
-		print_code(context_.Rip, 10);
 #ifdef _WIN64
 	} while (context_.Rip != item->break_point && item->break_point != 0);
 #else
@@ -235,10 +239,21 @@ bool __stdcall emulation_debugger::trace(void *mem)
 #endif
 
 	if (!backup(uc))
+	{
+		print_register();
+
 		return false;
+	}
 
 	if (!trace_state)
+	{
+		print_register();
+
 		return false;
+	}
+
+	if (!is_print)
+		print_register();
 
 	return true;
 }
