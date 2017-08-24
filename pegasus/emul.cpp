@@ -40,6 +40,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		else
 		{
 			MEMORY_BASIC_INFORMATION64 mbi;
+			memset(&mbi, 0, sizeof(mbi));
 
 			if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
 			{
@@ -134,6 +135,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		{
 			windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 			MEMORY_BASIC_INFORMATION64 mbi;
+			memset(&mbi, 0, sizeof(mbi));
 
 			if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
 			{
@@ -150,6 +152,14 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		}
 	}
 }
+
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+	//windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
+	//windbg_linker->write_file_log(g_log_path, L"emul_trace.log", L"trace:: %0*I64x\n", 16, address);
+	g_emulator->mnemonic_mov_ss(uc, address);
+	g_emulator->mnemonic_mov_gs(uc, address);
+}
 ///
 ///
 ///
@@ -164,36 +174,66 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 		return;
 
 	if (g_emulator->attach())
+	{
 		GetCurrentDirectory(MAX_PATH, g_log_path);
+		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
+		windbg_linker->write_file_log(g_log_path, L"emul.log", L"::::::: attach debuggee :::::::\n");
+		windbg_linker->write_file_log(g_log_path, L"emul_trace.log", L"::::::: attach debuggee :::::::\n");
+
+		dprintf("\n	");
+		g_Ext->DmlCmdExec("step into\n", "!trace");
+	}
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}")
+EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 {
 	if (!g_emulator)
 		return;
 
 	bool strange = false;
 	unsigned long long bp = GetArgU64("bp", FALSE);
+	unsigned long long step = GetArgU64("step", FALSE);
 	trace_item item;
+
+	if (HasArg("so"))
+		item.step_over = true;
+	else
+		item.step_over = false;
 
 	if (!g_emulator->is_64_cpu())
 	{
 		item.mode = UC_MODE_32;
-		item.code_callback = nullptr;
+		item.code_callback = hook_code;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
 		item.break_point = bp;
+		item.step = step;
 	}
 	else
 	{
 		item.mode = UC_MODE_64;
-		item.code_callback = nullptr;
+		item.code_callback = hook_code;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
 		item.break_point = bp;
+		item.step = step;
 	}
 
-	g_emulator->trace(&item);
+	if (!g_emulator->trace(&item))
+	{
+		do
+		{
+			if (item.mode == UC_MODE_32 && g_emulator->is_64_cpu())
+				item.mode = UC_MODE_64;
+			else if (item.mode == UC_MODE_64 && !g_emulator->is_64_cpu())
+				item.mode = UC_MODE_32;
+			else
+				break;
+		} while (!g_emulator->trace(&item));
+	}
+
 	dprintf("\n	");
-	g_Ext->DmlCmdExec("step into\n", "!trace");
+	g_Ext->DmlCmdExec("step into", "!trace");
+	dprintf(" ");
+	g_Ext->DmlCmdExec("step over\n", "!trace -so");
 }

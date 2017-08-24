@@ -68,6 +68,9 @@ namespace engine
 		virtual void * __stdcall get_windbg_linker() = 0;
 
 		virtual void __stdcall print_code(unsigned long long ip, unsigned long line) = 0;
+
+		virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip) = 0;
+		virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip) = 0;
 	};
 
 	class linker

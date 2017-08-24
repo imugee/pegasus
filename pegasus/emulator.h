@@ -5,6 +5,9 @@ typedef struct _EMULATOR_TRACE_
 {
 	unsigned long long break_point;
 	unsigned long mode;
+	unsigned long long step;
+	bool step_over;
+
 	void *code_callback;
 	void *unmap_callback;
 	void *fetch_callback;
@@ -26,6 +29,7 @@ private:
 	std::list<MEMORY_BASIC_INFORMATION64> memory_list_;
 
 	CONTEXT context_;
+	CONTEXT backup_context_;
 	unsigned long long teb_address_;
 	unsigned long long teb_64_address_;
 	unsigned long long peb_address_;
@@ -65,15 +69,18 @@ private:
 
 	bool __stdcall disasm(void *code, size_t size, uint32_t dt, void *out);
 
-	bool __stdcall mnemonic_switch_wow64cpu(void *engine, trace_item item, void *new_engine);
-	bool __stdcall mnemonic_wow_ret(void *engine, trace_item item, void *new_engine);
-
-	bool __stdcall mnemonic_mov_gs(void *engine);
-	bool __stdcall mnemonic_mov_ss(void *engine);
+	bool __stdcall mnemonic_switch_wow64cpu(void *engine);
+	bool __stdcall mnemonic_wow_ret(void *engine);
 
 	unsigned long long before(unsigned long long offset);
 
-	void __stdcall print_register();
+	void __stdcall clear_and_print();
+	void __stdcall log_print();
+
+	void __stdcall print64(unsigned long long, unsigned long long);
+	void __stdcall print32(unsigned long long, unsigned long long);
+
+	virtual bool __stdcall trace(void *engine, trace_item item);
 
 public:
 	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
@@ -93,6 +100,9 @@ public:
 
 	void __stdcall print_code(unsigned long long ip, unsigned long line);
 	virtual void * __stdcall get_windbg_linker();
+
+	virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip);
+	virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip);
 };
 
 #define DISTORM_TO_UC_REGS \

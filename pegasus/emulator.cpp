@@ -118,6 +118,8 @@ bool __stdcall emulation_debugger::attach()
 		is_32 = true;
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 	}
+	else
+		is_64_ = true;
 
 	peb_address_ = windbg_linker_.get_peb_address();
 	teb_address_ = windbg_linker_.get_teb_address();
@@ -148,112 +150,99 @@ bool __stdcall emulation_debugger::attach()
 	if (is_32)
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 
-	print_register();
+	clear_and_print();
 
+	return true;
+}
+
+bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
+{
+	uc_engine *uc = (uc_engine *)engine;
+	BYTE dump[1024];
+	_DInst di;
+	unsigned long long end_point = context_.Rip + 0x1000;
+	unsigned long step = 1;
+
+	if (!windbg_linker_.read_memory(context_.Rip, dump, 1024))
+		return false;
+
+	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
+		return false;
+
+	if (item.break_point)
+	{
+		end_point = item.break_point;
+		step = 0;
+	}
+
+	//if (item.step_over)
+	//{
+	//	end_point = context_.Rip + di.size;
+	//	step = 0;
+	//}
+
+	uc_err err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+	if (err)
+	{
+		if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+		{
+			err = uc_emu_start(uc, context_.Rip, end_point, 0, step);// dprintf("break::e::%d\n", err);
+		}
+	}
+
+	backup_context_ = context_;
+
+	if (is_64_)
+	{
+		if (!read_x64_cpu_context(uc))
+			return false;
+	}
+	else
+	{
+		if (!read_x86_cpu_context(uc))
+			return false;
+	}
+
+	if (err)
+		return false;
+	
 	return true;
 }
 
 bool __stdcall emulation_debugger::trace(void *mem)
 {
-	unsigned long err_count = 0;
-	bool trace_state = true;
+	uc_hook code_hook;
 	uc_hook write_unmap_hook;
 	uc_hook read_unmap_hook;
 	uc_hook fetch_hook;
 	uc_engine *uc = nullptr;
 	trace_item *item = (trace_item *)mem;
-	bool is_print = false;
+	bool s = true;
 
 	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
 		return false;
 	std::shared_ptr<void> uc_closer(uc, uc_close);
 
+	uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
 	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
 	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
 	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
 
-	if (!load_gdt(uc))
+	if (!load_gdt(uc) || !load_context(uc, item->mode))
 		return false;
 
-	if (!load_context(uc, item->mode))
-		return false;
-
-	do
+	if (!trace(uc, *item))
 	{
-		if (mnemonic_switch_wow64cpu(uc, *item, &uc))
-			continue;
-
-		if (is_64_ && mnemonic_mov_gs(uc))
-			continue;
-
-		if (is_64_ && mnemonic_wow_ret(uc, *item, &uc))
-			continue;
-#ifdef _WIN64
-		uc_err err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x1000, 0, 1);
-#else
-		uc_err err = uc_emu_start(uc, context_.Eip, context_.Eip + 0x1000, 0, 1);
-#endif
-		if(err)
-		{
-			if (is_64_ && mnemonic_mov_ss(uc))
-				continue;
-
-			if (!(err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED))
-				dprintf("break::e::%d\n", err);
-			else
-			{
-#ifdef _WIN64
-				err = uc_emu_start(uc, context_.Rip, context_.Rip + 0x1000, 0, 1);
-#else
-				err = uc_emu_start(uc, context_.Rip, context_.Eip + 0x1000, 0, 1);
-#endif
-				if (err == 0)
-					continue;
-			}
-
-			trace_state = false;
-		}
-
-		if (is_64_)
-		{
-			if (!read_x64_cpu_context(uc))
-				break;
-		}
-		else
-		{
-			if (!read_x86_cpu_context(uc))
-				break;
-		}
-
-		//print_code(context_.Rip, 15);
-		print_register();
-		is_print = true;
-
-		if (!trace_state)
-			break;
-
-#ifdef _WIN64
-	} while (context_.Rip != item->break_point && item->break_point != 0);
-#else
-	} while (context_.Eip != item->break_point && item->break_point != 0);
-#endif
+		mnemonic_switch_wow64cpu(uc);
+		mnemonic_wow_ret(uc);
+		s = false;
+	}
 
 	if (!backup(uc))
-	{
-		print_register();
-
 		return false;
-	}
 
-	if (!trace_state)
-	{
-		print_register();
+	//log_print();
+	clear_and_print();
 
-		return false;
-	}
-
-	if (!is_print)
-		print_register();
-
-	return true;
+	return s;
 }

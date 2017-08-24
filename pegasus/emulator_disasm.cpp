@@ -31,18 +31,16 @@ bool __stdcall emulation_debugger::disasm(void *code, size_t size, uint32_t dt, 
 
 	return true;
 }
-
-bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine)
+//
+//
+//
+bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long long ip)
 {
 	BYTE dump[1024];
 	_DInst di;
 	uc_engine *uc = (uc_engine *)engine;
 
-#ifdef _WIN64
-	if (uc_mem_read(uc, context_.Rip, dump, 1024) != 0)
-#else
-	if (uc_mem_read(uc, context_.Eip, dump, 1024) != 0)
-#endif
+	if (uc_mem_read(uc, ip, dump, 1024) != 0)
 		return false;
 
 	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
@@ -52,30 +50,23 @@ bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine)
 		return false;
 
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
-
 	if (uc_reg_write(uc, distorm_to_uc[di.ops[0].index], &teb_64_address_) != 0)
 		return false;
 
-#ifdef _WIN64
-	context_.Rip = context_.Rip + di.size;
-#else
-	context_.Eip = context_.Eip + di.size;
-#endif
+	context_.Rip = ip + di.size;
+	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.Rip) != 0)
+		return false;
 
 	return true;
 }
 
-bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine)
+bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine, unsigned long long ip)
 {
 	BYTE dump[1024];
 	_DInst di;
 	uc_engine *uc = (uc_engine *)engine;
 
-#ifdef _WIN64
-	if (uc_mem_read(uc, context_.Rip, dump, 1024) != 0)
-#else
-	if (uc_mem_read(uc, context_.Eip, dump, 1024) != 0)
-#endif
+	if (uc_mem_read(uc, ip, dump, 1024) != 0)
 		return false;
 
 	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
@@ -85,6 +76,7 @@ bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine)
 		return false;
 
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
+
 	DWORD ss = 0x88;
 	if (uc_reg_write(uc, distorm_to_uc[di.ops[1].index], &ss) != 0)
 		return false;
@@ -92,17 +84,13 @@ bool __stdcall emulation_debugger::mnemonic_mov_ss(void *engine)
 	return true;
 }
 
-bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine, trace_item item, void *new_engine)
+bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 {
 	BYTE dump[1024];
 	_DInst di;
 	uc_engine *uc = (uc_engine *)engine;
 
-#ifdef _WIN64
 	if (uc_mem_read(uc, context_.Rip, dump, 1024) != 0)
-#else
-	if (uc_mem_read(uc, context_.Eip, dump, 1024) != 0)
-#endif
 		return false;
 
 	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
@@ -121,93 +109,28 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine, trace_item ite
 	if (uc_mem_read(uc, return_register, &value, sizeof(value)) != 0)
 		return false;
 
-#ifdef _WIN64
 	context_.Rip = value;
-#else
-	context_.Eip = value;
-#endif
 	is_64_ = false;
-	//
-	//
-	//
-	if (!backup(uc))
-		return false;
-
-	uc_close(uc);
-	if (uc_open(UC_ARCH_X86, UC_MODE_32, &uc) != 0)
-		return false;
-
-	uc_hook write_unmap_hook;
-	uc_hook read_unmap_hook;
-	uc_hook fetch_hook;
-
-	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item.unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item.unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item.fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
-
-	if (!load_gdt(uc))
-		return false;
-
-	if (!load_context(uc, UC_MODE_32))
-		return false;
 
 	g_Ext->ExecuteSilent("!wow64exts.sw");
-	*(uc_engine **)new_engine = uc;
-	//
-	//
-	//
+
 	return true;
 }
 
-bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine, trace_item item, void *new_engine)
+bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 {
 	uc_engine *uc = (uc_engine *)engine;
 	unsigned char dump[16] = { 0, };
 
-#ifdef _WIN64
 	if (uc_mem_read(uc, context_.Rip, dump, 16) == 0 && dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0)
-#else
-	if (uc_mem_read(uc, context_.Eip, dump, 16) == 0 && dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0)
-#endif
 	{
 		unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
 		unsigned long syscall = *syscall_ptr;
 
 		is_64_ = true;
-#ifdef _WIN64
 		context_.Rip = syscall;
-#else
-		context_.Eip = syscall;
-#endif
-		//
-		//
-		//
-		if (!backup(uc))
-			return false;
-
-		uc_close(uc);
-		if (uc_open(UC_ARCH_X86, UC_MODE_64, &uc) != 0)
-			return false;
-
-		uc_hook write_unmap_hook;
-		uc_hook read_unmap_hook;
-		uc_hook fetch_hook;
-
-		uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item.unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-		uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item.unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-		uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item.fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
-
-		if (!load_gdt(uc))
-			return false;
-
-		if (!load_context(uc, UC_MODE_64))
-			return false;
-
 		g_Ext->ExecuteSilent("!wow64exts.sw");
-		*(uc_engine **)new_engine = uc;
-		//
-		//
-		//
+
 		return true;
 	}
 
@@ -260,6 +183,7 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	dprintf("\n");
 	for(unsigned int i = 0; i<(line * 2 + 1); ++i)
 	{
+		//if(Disasm(&index, mnemonic, 0))
 		if (g_Ext->m_Control->Disassemble(index, DEBUG_DISASM_EFFECTIVE_ADDRESS, mnemonic, 1024, &size, &next) == S_OK)
 		{
 			if(index == context_.Rip)

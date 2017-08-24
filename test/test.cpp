@@ -20,8 +20,8 @@ void alloc()
 
 void main()
 {
-	load();
+	//load();
 	printf("test\n");
-	Sleep(1000);
-	alloc();
+	//Sleep(1000);
+	//alloc();
 }
