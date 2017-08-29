@@ -169,10 +169,6 @@
     <ClCompile Include="..\include\distorm\src\wstring.c" />
     <ClCompile Include="emul.cpp" />
     <ClCompile Include="emulator.cpp" />
-    <ClCompile Include="emulator_core.cpp" />
-    <ClCompile Include="emulator_disasm.cpp" />
-    <ClCompile Include="emulator_etc.cpp" />
-    <ClCompile Include="emulator_page.cpp" />
     <ClCompile Include="engextcpp.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="test.cpp" />

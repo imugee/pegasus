@@ -42,18 +42,6 @@
     <ClCompile Include="..\include\distorm\src\wstring.c">
       <Filter>distorm</Filter>
     </ClCompile>
-    <ClCompile Include="emulator_disasm.cpp">
-      <Filter>emulator</Filter>
-    </ClCompile>
-    <ClCompile Include="emulator_etc.cpp">
-      <Filter>emulator</Filter>
-    </ClCompile>
-    <ClCompile Include="emulator_page.cpp">
-      <Filter>emulator</Filter>
-    </ClCompile>
-    <ClCompile Include="emulator_core.cpp">
-      <Filter>emulator</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engextcpp.hpp">
