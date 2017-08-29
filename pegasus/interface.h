@@ -71,6 +71,8 @@ namespace engine
 
 		virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip) = 0;
 		virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip) = 0;
+
+		virtual bool __stdcall read_page(unsigned long long address, unsigned char *dump, size_t *size) = 0;
 	};
 
 	class linker

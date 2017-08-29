@@ -23,6 +23,8 @@ public:
 
 	void trace();
 	void regs();
+
+	void mdump();
 };
 
 #endif

@@ -88,6 +88,8 @@ public:
 	virtual bool __stdcall clear_ring3();
 	virtual void __stdcall current_regs();
 
+	virtual bool __stdcall read_page(unsigned long long address, unsigned char *dump, size_t *size);
+
 public:
 	emulation_debugger() : is_64_(false) {}
 

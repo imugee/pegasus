@@ -237,3 +237,72 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 	dprintf(" ");
 	g_Ext->DmlCmdExec("step over\n", "!trace -so");
 }
+
+bool __stdcall is_ascii(char c)
+{
+	if (c >= 0x41 && c <= 0x7e)
+		return TRUE;
+
+	return FALSE;
+}
+
+EXT_CLASS_COMMAND(EmulationEngine, mdump, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}" "{d;b,o;d;;}" "{q;b,o;q;;}")
+{
+	if (!g_emulator)
+		return;
+
+	unsigned long long address = GetArgU64("a", FALSE);
+	size_t size = GetArgU64("l", FALSE);
+	unsigned char dump[0x1000] = { 0, };
+
+	if(!g_emulator->read_page(address, dump, &size))
+		return;
+
+	if (HasArg("d"))
+	{
+		return;
+	}
+
+	unsigned int i = 0, j = 0;
+
+	for (i; i < size; ++i)
+	{
+		if (i == 0)
+		{
+			dprintf("%08x  ", address);
+		}
+		else if (i % 16 == 0)
+		{
+			/*-- ascii --*/
+			for (j; j < i; ++j)
+			{
+				if (is_ascii(dump[j]))
+					dprintf("%c", dump[j]);
+				else
+					dprintf(".");
+			}
+
+			/*-- next line --*/
+			dprintf("\n");
+			address += 16;
+			dprintf("%08x  ", address);
+		}
+
+		dprintf("%02x ", dump[i]);
+	}
+
+	if (i % 16)
+	{
+		for (unsigned k = 0; k < i % 16; ++i)
+			dprintf("   ");
+	}
+
+	for (j; j < i; ++j)
+	{
+		if (is_ascii(dump[j]))
+			dprintf("%c", dump[j]);
+		else
+			dprintf(".");
+	}
+	dprintf("\n");
+}

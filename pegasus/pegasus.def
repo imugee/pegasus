@@ -15,4 +15,4 @@ EXPORTS
 	;detach
 	trace
 	;regs
-
+	mdump
