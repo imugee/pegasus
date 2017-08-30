@@ -16,3 +16,5 @@ EXPORTS
 	trace
 	;regs
 	mdump
+
+	steps

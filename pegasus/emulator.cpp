@@ -415,6 +415,9 @@ bool __stdcall emulation_debugger::attach()
 {
 	bool is_32 = false;
 
+	if (is_wow64cpu() && g_Ext->IsCurMachine64())
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+
 	if (g_Ext->IsCurMachine32())
 	{
 		is_32 = true;
@@ -452,7 +455,8 @@ bool __stdcall emulation_debugger::attach()
 	if (is_32)
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 
-	clear_and_print();
+	//clear_and_print();
+	//log_print();
 
 	return true;
 }
@@ -477,18 +481,20 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 		step = 0;
 	}
 
-	//if (item.step_over)
-	//{
-	//	end_point = context_.Rip + di.size;
-	//	step = 0;
-	//}
-
 	uc_err err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
 	if (err)
 	{
 		if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
 		{
-			err = uc_emu_start(uc, context_.Rip, end_point, 0, step);// dprintf("break::e::%d\n", err);
+			unsigned restart_count = 0;
+
+			do
+			{
+				err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+				++restart_count;
+			} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 5);
+
+			//dprintf("break::e::%d\n", err);
 		}
 	}
 
@@ -544,7 +550,7 @@ bool __stdcall emulation_debugger::trace(void *mem)
 		return false;
 
 	//log_print();
-	clear_and_print();
+	//clear_and_print();
 
 	return s;
 }
@@ -652,8 +658,6 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 	context_.Rip = value;
 	is_64_ = false;
 
-	g_Ext->ExecuteSilent("!wow64exts.sw");
-
 	return true;
 }
 
@@ -662,14 +666,13 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 	uc_engine *uc = (uc_engine *)engine;
 	unsigned char dump[16] = { 0, };
 
-	if (uc_mem_read(uc, context_.Rip, dump, 16) == 0 && dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0)
+	if ((uc_mem_read(uc, context_.Rip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
 	{
 		unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
 		unsigned long syscall = *syscall_ptr;
 
 		is_64_ = true;
 		context_.Rip = syscall;
-		g_Ext->ExecuteSilent("!wow64exts.sw");
 
 		return true;
 	}
@@ -1093,3 +1096,8 @@ void __stdcall emulation_debugger::clear_and_print()
 	}
 }
 #endif
+
+CONTEXT __stdcall emulation_debugger::get_current_thread_context()
+{
+	return context_;
+}

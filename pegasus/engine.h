@@ -25,6 +25,8 @@ public:
 	void regs();
 
 	void mdump();
+
+	void steps();
 };
 
 #endif

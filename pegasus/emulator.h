@@ -74,9 +74,6 @@ private:
 
 	unsigned long long before(unsigned long long offset);
 
-	void __stdcall clear_and_print();
-	void __stdcall log_print();
-
 	void __stdcall print64(unsigned long long, unsigned long long);
 	void __stdcall print32(unsigned long long, unsigned long long);
 
@@ -89,6 +86,8 @@ public:
 	virtual void __stdcall current_regs();
 
 	virtual bool __stdcall read_page(unsigned long long address, unsigned char *dump, size_t *size);
+
+	virtual CONTEXT __stdcall get_current_thread_context();
 
 public:
 	emulation_debugger() : is_64_(false) {}
@@ -105,6 +104,9 @@ public:
 
 	virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip);
 	virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip);
+
+	virtual void __stdcall clear_and_print();
+	virtual void __stdcall log_print();
 };
 
 #define DISTORM_TO_UC_REGS \
