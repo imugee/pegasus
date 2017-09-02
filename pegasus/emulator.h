@@ -27,6 +27,7 @@ public:
 private:
 	windbg_engine_linker windbg_linker_;
 	std::list<MEMORY_BASIC_INFORMATION64> memory_list_;
+	void *engine_;
 
 	CONTEXT context_;
 	CONTEXT backup_context_;
@@ -65,8 +66,6 @@ private:
 	virtual bool __stdcall write_x64_cpu_context(void *engine);
 	virtual bool __stdcall read_x64_cpu_context(void *engine);
 
-	virtual bool __stdcall backup(void *engine);
-
 	bool __stdcall disasm(void *code, size_t size, uint32_t dt, void *out);
 
 	bool __stdcall mnemonic_switch_wow64cpu(void *engine);
@@ -78,6 +77,7 @@ private:
 	void __stdcall print32(unsigned long long, unsigned long long);
 
 	virtual bool __stdcall trace(void *engine, trace_item item);
+	virtual bool __stdcall backup(void *engine);
 
 public:
 	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
@@ -90,7 +90,8 @@ public:
 	virtual CONTEXT __stdcall get_current_thread_context();
 
 public:
-	emulation_debugger() : is_64_(false) {}
+	emulation_debugger() : is_64_(false), engine_(nullptr) {}
+	~emulation_debugger();
 
 	virtual bool __stdcall is_64_cpu();
 
@@ -107,6 +108,8 @@ public:
 
 	virtual void __stdcall clear_and_print();
 	virtual void __stdcall log_print();
+	virtual void __stdcall close();
+	virtual bool __stdcall backup();
 };
 
 #define DISTORM_TO_UC_REGS \

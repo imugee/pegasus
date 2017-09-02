@@ -76,6 +76,8 @@ namespace engine
 
 		virtual CONTEXT __stdcall get_current_thread_context() = 0;
 		virtual void __stdcall log_print() = 0;
+		virtual void __stdcall close() = 0;
+		virtual bool __stdcall backup() = 0;
 	};
 
 	class linker

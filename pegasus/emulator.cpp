@@ -26,6 +26,15 @@
 //
 //
 //
+emulation_debugger::~emulation_debugger()
+{
+	if (engine_)
+	{
+		uc_engine *uc = (uc_engine *)engine_;
+		uc_close(uc);
+	}
+}
+
 bool __stdcall emulation_debugger::load(void *engine, unsigned long long load_address, size_t load_size, void *dump, size_t write_size)
 {
 	if (!engine)
@@ -455,47 +464,44 @@ bool __stdcall emulation_debugger::attach()
 	if (is_32)
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 
-	//clear_and_print();
-	//log_print();
-
 	return true;
 }
 
 bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 {
+	uc_err err = (uc_err)0;
 	uc_engine *uc = (uc_engine *)engine;
 	BYTE dump[1024];
 	_DInst di;
 	unsigned long long end_point = context_.Rip + 0x1000;
 	unsigned long step = 1;
 
-	if (!windbg_linker_.read_memory(context_.Rip, dump, 1024))
-		return false;
-
-	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
-		return false;
-
-	if (item.break_point)
+	if (windbg_linker_.read_memory(context_.Rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
 	{
-		end_point = item.break_point;
-		step = 0;
-	}
-
-	uc_err err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-	if (err)
-	{
-		if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+		if (item.break_point)
 		{
-			unsigned restart_count = 0;
-
-			do
-			{
-				err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-				++restart_count;
-			} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 5);
-
-			//dprintf("break::e::%d\n", err);
+			end_point = item.break_point;
+			step = 0;
 		}
+
+		err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+		if (err)
+		{
+			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+			{
+				unsigned restart_count = 0;
+
+				do
+				{
+					err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+					++restart_count;
+				} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 3);
+			}
+		}
+	}
+	else
+	{
+		err = UC_ERR_EXCEPTION;
 	}
 
 	backup_context_ = context_;
@@ -503,17 +509,25 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 	if (is_64_)
 	{
 		if (!read_x64_cpu_context(uc))
+		{
 			return false;
+		}
 	}
 	else
 	{
 		if (!read_x86_cpu_context(uc))
+		{
 			return false;
+		}
 	}
 
 	if (err)
+	{
+		//dprintf("break::e::%d\n", err);
+
 		return false;
-	
+	}
+
 	return true;
 }
 
@@ -527,30 +541,33 @@ bool __stdcall emulation_debugger::trace(void *mem)
 	trace_item *item = (trace_item *)mem;
 	bool s = true;
 
-	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
-		return false;
-	std::shared_ptr<void> uc_closer(uc, uc_close);
+	if (!engine_)
+	{
+		if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
+			return false;
+		//std::shared_ptr<void> uc_closer(uc, uc_close);
 
-	uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
-	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
+		uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
+		uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+		uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+		uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
 
-	if (!load_gdt(uc) || !load_context(uc, item->mode))
-		return false;
+		if (!load_gdt(uc) || !load_context(uc, item->mode))
+			return false;
 
+		engine_ = uc;
+	}
+	else
+	{
+		uc = (uc_engine *)engine_;
+	}
+	
 	if (!trace(uc, *item))
 	{
 		mnemonic_switch_wow64cpu(uc);
 		mnemonic_wow_ret(uc);
 		s = false;
 	}
-
-	if (!backup(uc))
-		return false;
-
-	//log_print();
-	//clear_and_print();
 
 	return s;
 }
@@ -679,7 +696,7 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 
 	return false;
 }
-// print dml
+//
 //	https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/customizing-debugger-output-using-dml
 //
 void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned long line)
@@ -692,8 +709,6 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	_DInst di;
 	unsigned char dump[32] = { 0, };
 
-	windbg_linker_.clear_screen();
-
 	di.size = 0;
 	for (unsigned int i = 0; i < line; ++i)
 		index = before(index);
@@ -705,10 +720,10 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	dprintf("\n");
 	for (unsigned int i = 0; i<(line * 2 + 1); ++i)
 	{
-		//if(Disasm(&index, mnemonic, 0))
-		if (g_Ext->m_Control->Disassemble(index, DEBUG_DISASM_EFFECTIVE_ADDRESS, mnemonic, 1024, &size, &next) == S_OK)
+		unsigned long long next = index;
+		if(Disasm(&next, mnemonic, 0))
 		{
-			if (index == context_.Rip)
+			if (index == ip)
 				g_Ext->Dml("<b><col fg=\"emphfg\">	%s</col></b>", mnemonic);
 			else
 				dprintf("	%s", mnemonic);
@@ -717,13 +732,12 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 		index = next;
 	}
 	dprintf("\n");
-	//print_register();
 }
 
 void __stdcall emulation_debugger::print64(unsigned long long c, unsigned long long b)
 {
 	if (c != b)
-		g_Ext->Dml("<b><col fg=\"emphfg\">%0*I64x</col></b>", 16, c);
+		g_Ext->Dml("<b><col fg=\"changed\">%0*I64x</col></b>", 16, c);
 	else
 		dprintf("%0*I64x", 16, c);
 }
@@ -731,7 +745,7 @@ void __stdcall emulation_debugger::print64(unsigned long long c, unsigned long l
 void __stdcall emulation_debugger::print32(unsigned long long c, unsigned long long b)
 {
 	if (c != b)
-		g_Ext->Dml("<b><col fg=\"emphfg\">%08x</col></b>", c);
+		g_Ext->Dml("<b><col fg=\"changed\">%08x</col></b>", c);
 	else
 		dprintf("%08x", c);
 }
@@ -895,6 +909,42 @@ bool __stdcall emulation_debugger::backup(void *engine)
 	return true;
 }
 
+bool __stdcall emulation_debugger::backup()
+{
+	uc_engine *uc = (uc_engine *)engine_;
+	uc_mem_region *um = nullptr;
+	uint32_t count = 0;
+
+	if (uc_mem_regions(uc, &um, &count) != 0)
+		return false;
+	std::shared_ptr<void> uc_memory_closer(um, free);
+
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		size_t size = um[i].end - um[i].begin + 1;
+		unsigned char *dump = (unsigned char *)malloc(size);
+
+		if (!dump)
+			return false;
+
+		memset(dump, 0, size);
+		std::shared_ptr<void> dump_closer(dump, free);
+
+		if (uc_mem_read(uc, um[i].begin, dump, size) != 0)
+			return false;
+
+		wchar_t name[MAX_PATH];
+		wmemset(name, 0, MAX_PATH);
+		if (!_ui64tow(um[i].begin, name, 16))
+			return false;
+
+		if (!windbg_linker_.write_binary(ring3_path_, name, dump, size))
+			return false;
+	}
+
+	return true;
+}
+
 bool __stdcall emulation_debugger::write_binary(unsigned long long address)
 {
 	MEMORY_BASIC_INFORMATION64 mbi;
@@ -945,7 +995,7 @@ bool __stdcall emulation_debugger::read_page(unsigned long long address, unsigne
 
 	if (region_size - offset < *size)
 		*size = region_size - offset;
-	//dprintf("size:: %08x\n", size);
+
 	memcpy(dump, &d[offset], *size);
 
 	return true;
@@ -997,61 +1047,54 @@ void * __stdcall emulation_debugger::get_windbg_linker()
 
 void __stdcall emulation_debugger::log_print()
 {
-	CONTEXT context = context_;
-
 	if (is_64_cpu())
 	{
-#ifdef _WIN64
-		dprintf("	rax=%0*I64x rbx=%0*I64x rcx=%0*I64x rdx=%0*I64x\n", 16, context.Rax, 16, context.Rbx, 16, context.Rcx, 16, context.Rdx);
-		dprintf("	rsi=%0*I64x rdi=%0*I64x\n", 16, context.Rsi, 16, context.Rdi);
-		dprintf("	rsp=%0*I64x rbp=%0*I64x\n", 16, context.Rsp, 16, context.Rbp);
-		dprintf("	rip=%0*I64x\n", 16, context.Rip);
-		dprintf("\n");
-		dprintf("	r8=%0*I64x r9=%0*I64x r10=%0*I64x\n", 16, context.R8, 16, context.R9, 16, context.R10);
-		dprintf("	r11=%0*I64x r12=%0*I64x r13=%0*I64x\n", 16, context.R11, 16, context.R12, 16, context.R13);
-		dprintf("	r14=%0*I64x r15=%0*I64x\n", 16, context.R14, 16, context.R15);
-		dprintf("	efl=%0*I64x\n", 16, context.EFlags);
-		dprintf("	CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d%d NT=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d\n"
-			, GetFlagBit(context.EFlags, CF_INDEX), GetFlagBit(context.EFlags, PF_INDEX)
-			, GetFlagBit(context.EFlags, AF_INDEX), GetFlagBit(context.EFlags, ZF_INDEX)
-			, GetFlagBit(context.EFlags, SF_INDEX), GetFlagBit(context.EFlags, TF_INDEX)
-			, GetFlagBit(context.EFlags, IF_INDEX), GetFlagBit(context.EFlags, DF_INDEX)
-			, GetFlagBit(context.EFlags, OF_INDEX), GetFlagBit(context.EFlags, IOPL_INDEX_1), GetFlagBit(context.EFlags, IOPL_INDEX_2)
-			, GetFlagBit(context.EFlags, NT_INDEX), GetFlagBit(context.EFlags, RF_INDEX), GetFlagBit(context.EFlags, VM_INDEX)
-			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
-		dprintf("	cs=%02x ds=%02x es=%02x fs=%02x gs=%02x ss=%02x\n", context.SegCs, context.SegDs, context.SegEs, context.SegFs, context.SegGs, context.SegSs);
-#endif
+		dprintf("	rax="), print64(context_.Rax, backup_context_.Rax), dprintf(" ");
+		dprintf("rbx="), print64(context_.Rbx, backup_context_.Rbx), dprintf(" ");
+		dprintf("rcx="), print64(context_.Rcx, backup_context_.Rcx), dprintf("\n");
+
+		dprintf("	rdx="), print64(context_.Rdx, backup_context_.Rdx), dprintf(" ");
+		dprintf("rsi="), print64(context_.Rsi, backup_context_.Rsi), dprintf(" ");
+		dprintf("rdi="), print64(context_.Rdi, backup_context_.Rdi), dprintf("\n");
+
+		dprintf("	rip="), print64(context_.Rip, backup_context_.Rip), dprintf(" ");
+		dprintf("rsp="), print64(context_.Rsp, backup_context_.Rsp), dprintf(" ");
+		dprintf("rbp="), print64(context_.Rbp, backup_context_.Rbp), dprintf("\n");
+
+		dprintf("	r8="), print64(context_.R8, backup_context_.R8), dprintf(" ");
+		dprintf("r9="), print64(context_.R9, backup_context_.R9), dprintf(" ");
+		dprintf("r10="), print64(context_.R10, backup_context_.R10), dprintf("\n");
+
+		dprintf("	r11="), print64(context_.R11, backup_context_.R11), dprintf(" ");
+		dprintf("r12="), print64(context_.R12, backup_context_.R12), dprintf(" ");
+		dprintf("r13="), print64(context_.R13, backup_context_.R13), dprintf("\n");
+
+		dprintf("	r14="), print64(context_.R14, backup_context_.R14), dprintf(" ");
+		dprintf("r15="), print64(context_.R15, backup_context_.R15), dprintf(" ");
+		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
 	}
 	else
 	{
-#ifdef _WIN64
-		dprintf("	eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n", context.Rax, context.Rbx, context.Rcx, context.Rdx, context.Rsi, context.Rdi);
-		dprintf("	eip=%08x esp=%08x ebp=%08x efl=%08x\n", context.Rip, context.Rsp, context.Rbp, context.EFlags);
-#else
-		dprintf("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n", context.Eax, context.Ebx, context.Ecx, context.Edx, context.Esi, context.Edi);
-		dprintf("eip=%08x esp=%08x ebp=%08x efl=%08x\n", context.Eip, context.Esp, context.Ebp, context.EFlags);
-#endif
-		dprintf("	CF=%d PF=%d AF=%d ZF=%d SF=%d TF=%d IF=%d DF=%d OF=%d IOPL=%d%d NT=%d VM=%d AC=%d VIF=%d VIP=%d ID=%d\n"
-			, GetFlagBit(context.EFlags, CF_INDEX), GetFlagBit(context.EFlags, PF_INDEX)
-			, GetFlagBit(context.EFlags, AF_INDEX), GetFlagBit(context.EFlags, ZF_INDEX)
-			, GetFlagBit(context.EFlags, SF_INDEX), GetFlagBit(context.EFlags, TF_INDEX)
-			, GetFlagBit(context.EFlags, IF_INDEX), GetFlagBit(context.EFlags, DF_INDEX)
-			, GetFlagBit(context.EFlags, OF_INDEX), GetFlagBit(context.EFlags, IOPL_INDEX_1), GetFlagBit(context.EFlags, IOPL_INDEX_2)
-			, GetFlagBit(context.EFlags, NT_INDEX), GetFlagBit(context.EFlags, RF_INDEX), GetFlagBit(context.EFlags, VM_INDEX)
-			, GetFlagBit(context.EFlags, AC_INDEX), GetFlagBit(context.EFlags, VIF_INDEX), GetFlagBit(context.EFlags, VIP_INDEX), GetFlagBit(context.EFlags, ID_INDEX));
-		dprintf("	cs=%02x ss=%02x ds=%02x es=%02x fs=%02x gs=%02x\n", context.SegCs, context.SegSs, context.SegDs, context.SegEs, context.SegFs, context.SegGs);
+		dprintf("	eax="), print32(context_.Rax, backup_context_.Rax), dprintf(" ");
+		dprintf("ebx="), print32(context_.Rbx, backup_context_.Rbx), dprintf(" ");
+		dprintf("ecx="), print32(context_.Rcx, backup_context_.Rcx), dprintf(" ");
+		dprintf("edx="), print32(context_.Rdx, backup_context_.Rdx), dprintf(" ");
+		dprintf("esi="), print32(context_.Rsi, backup_context_.Rsi), dprintf(" ");
+		dprintf("edi="), print32(context_.Rdi, backup_context_.Rdi), dprintf("\n");
+
+		dprintf("	eip="), print32(context_.Rip, backup_context_.Rip), dprintf(" ");
+		dprintf("esp="), print32(context_.Rsp, backup_context_.Rsp), dprintf(" ");
+		dprintf("ebp="), print32(context_.Rbp, backup_context_.Rbp), dprintf(" ");
+		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
 	}
 
-	char mnemonic[1024] = { 0, };
-	void *eip = (void *)context.Rip;
-
-	Disasm(&context.Rip, mnemonic, 0);
-	dprintf("	%s\n", mnemonic);
+	print_code(context_.Rip, 3);
 }
 
 #ifdef _WIN64
 void __stdcall emulation_debugger::clear_and_print()
 {
+	windbg_linker_.clear_screen();
 	print_code(context_.Rip, 10);
 
 	if (is_64_cpu())
@@ -1100,4 +1143,13 @@ void __stdcall emulation_debugger::clear_and_print()
 CONTEXT __stdcall emulation_debugger::get_current_thread_context()
 {
 	return context_;
+}
+
+void __stdcall emulation_debugger::close()
+{
+	uc_engine *uc = (uc_engine *)engine_;
+
+	backup(uc);
+	uc_close(uc);
+	engine_ = nullptr;
 }

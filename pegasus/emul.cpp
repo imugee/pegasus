@@ -32,7 +32,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 			if (uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL) == 0)
 			{
 				uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
-				//windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
 			}
 
 			std::shared_ptr<void> dump_closer(unknown_dump, free);
@@ -51,7 +51,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 					if (uc_mem_map(uc, mbi.BaseAddress, mbi.RegionSize, UC_PROT_ALL) == 0)
 					{
 						uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
-						//windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
+						windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
 					}
 					std::shared_ptr<void> dump_closer(unknown_dump, free);
 
@@ -106,16 +106,16 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 
 			if (err)
 			{
-				//windbg_linker->write_file_log(g_log_path, L"emul.log", L"data::fail %d, %08x = >%08x %08x, %08x\n", err, address, base, size, resize);
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data::fail %d, %08x = >%08x %08x, %08x\n", err, address, base, size, resize);
 			}
 			else
 			{
-				//windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, end);
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, end);
 			}
 		}
 		else
 		{
-			//windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, base + size);
+			windbg_linker->write_file_log(g_log_path, L"emul.log", L"data:: alloc memory %08x-%08x\n", base, base + size);
 		}
 	}
 }
@@ -135,7 +135,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 			if((err = uc_mem_map(uc, unknown_page.base, unknown_page.size, UC_PROT_ALL)) == 0)
 			{
 				uc_mem_write(uc, unknown_page.base, unknown_dump, unknown_page.size);
-				//windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
+				windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load existing memory %08x=>%08x-%08x\n", address, unknown_page.base, unknown_page.size);
 			}
 		}
 		else
@@ -153,7 +153,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 					uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
 
 					std::shared_ptr<void> dump_closer(unknown_dump, free);
-					//windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
+					windbg_linker->write_file_log(g_log_path, L"emul.log", L"code:: load new memory %08x=>%08x-%08x\n", address, mbi.BaseAddress, mbi.RegionSize);
 				}
 			}
 		}
@@ -163,6 +163,7 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
 	g_trace_step_list.push_back(address);
+
 	g_emulator->mnemonic_mov_ss(uc, address);
 	g_emulator->mnemonic_mov_gs(uc, address);
 }
@@ -185,17 +186,17 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 	{
 		GetCurrentDirectory(MAX_PATH, g_log_path);
 		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
-		//windbg_linker->write_file_log(g_log_path, L"emul.log", L"::::::: attach debuggee :::::::\n");
-		//windbg_linker->write_file_log(g_log_path, L"emul_trace.log", L"::::::: attach debuggee :::::::\n");
-
-		dprintf("\n	");
-		g_Ext->DmlCmdExec("step into\n", "!trace");
+		windbg_linker->write_file_log(g_log_path, L"emul.log", L"::::::: attach debuggee :::::::\n");
 
 		g_emulator->log_print();
+
+		g_Ext->DmlCmdExec("step into", "!trace");
+		dprintf(" ");
+		g_Ext->DmlCmdExec("step over\n", "!trace -so");
 	}
 }
 
-//#define PEGASUS_DEBUG_MODE
+#define PEGASUS_STEP_MODE
 
 EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 {
@@ -218,7 +219,7 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 		item.code_callback = hook_code;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
-#ifndef PEGASUS_DEBUG_MODE
+#ifndef PEGASUS_STEP_MODE
 		item.break_point = bp;
 #else
 		item.break_point = 0;
@@ -230,25 +231,29 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 		item.code_callback = hook_code;
 		item.unmap_callback = hook_unmap_memory;
 		item.fetch_callback = hook_fetch_memory;
-#ifndef PEGASUS_DEBUG_MODE
+#ifndef PEGASUS_STEP_MODE
 		item.break_point = bp;
 #else
 		item.break_point = 0;
 #endif
 	}
 
-#ifndef PEGASUS_DEBUG_MODE
+#ifndef PEGASUS_STEP_MODE
 	if (!g_emulator->trace(&item))
 	{
 		do
 		{
 			if (item.mode == UC_MODE_32 && g_emulator->is_64_cpu())
 			{
+				g_emulator->close();
+
 				item.mode = UC_MODE_64;
 				g_Ext->ExecuteSilent("!wow64exts.sw");
 			}
 			else if (item.mode == UC_MODE_64 && !g_emulator->is_64_cpu())
 			{
+				g_emulator->close();
+
 				item.mode = UC_MODE_32;
 				g_Ext->ExecuteSilent("!wow64exts.sw");
 			}
@@ -263,11 +268,15 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 		{
 			if (item.mode == UC_MODE_32 && g_emulator->is_64_cpu())
 			{
+				g_emulator->close();
+
 				item.mode = UC_MODE_64;
 				g_Ext->ExecuteSilent("!wow64exts.sw");
 			}
 			else if (item.mode == UC_MODE_64 && !g_emulator->is_64_cpu())
 			{
+				g_emulator->close();
+
 				item.mode = UC_MODE_32;
 				g_Ext->ExecuteSilent("!wow64exts.sw");
 			}
@@ -276,10 +285,8 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 		}
 	} while (bp && g_emulator->get_current_thread_context().Rip != bp);
 #endif
-
 	g_emulator->log_print();
 
-	dprintf("\n	");
 	g_Ext->DmlCmdExec("step into", "!trace");
 	dprintf(" ");
 	g_Ext->DmlCmdExec("step over\n", "!trace -so");
@@ -294,7 +301,7 @@ EXT_CLASS_COMMAND(EmulationEngine, steps, "", "{;e,o;;;}")
 
 	for (it; it != g_trace_step_list.end(); ++it)
 	{
-		if (i == 16)
+		if (i == 12)
 		{
 			dprintf("\n");
 			i = 0;
@@ -308,6 +315,7 @@ EXT_CLASS_COMMAND(EmulationEngine, steps, "", "{;e,o;;;}")
 		dprintf("%08x ", *it);
 		++i;
 	}
+	dprintf("\n");
 }
 //
 //
@@ -323,6 +331,9 @@ bool __stdcall is_ascii(char c)
 EXT_CLASS_COMMAND(EmulationEngine, mdump, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}" "{d;b,o;d;;}" "{q;b,o;q;;}")
 {
 	if (!g_emulator)
+		return;
+
+	if(!g_emulator->backup())
 		return;
 
 	unsigned long long address = GetArgU64("a", FALSE);
