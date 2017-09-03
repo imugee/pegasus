@@ -1,65 +1,38 @@
-Pegasus - Windbg emulation plugin
+Pegasus project
 ==============
-[![Engine](https://img.shields.io/badge/Engine-UnicornEngine-blue.svg)](https://github.com/unicorn-engine/unicorn)
-[![Engine](https://img.shields.io/badge/Engine-Distorm-blue.svg)](https://github.com/gdabah/distorm)
 
-![Version](https://img.shields.io/badge/Version-Prototype-lightgrey.svg)
+* ![Version](https://img.shields.io/badge/Version-proto.pegasus-lightgrey.svg) *windbg emulation plugin*
+* ![Version](https://img.shields.io/badge/Version-rc.pegasus-lightgrey.svg) *windbg emulation plugin*
+* ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg) *windbg emulation plugin*
+* ![Version](https://img.shields.io/badge/Version-0.2.dbgsuit-red.svg) *windbg anti anti reversing plugin*
+
+Engine
+-------
+* unicorn : https://github.com/unicorn-engine/unicorn
+* distorm : https://github.com/gdabah/distorm
+
+Build
+-------
+![MSVC](https://img.shields.io/badge/msvc-x86-brightgreen.svg)
+![MSVC](https://img.shields.io/badge/msvc-x64-brightgreen.svg)
+
+Support
+-------
 ![Support](https://img.shields.io/badge/Support-LiveDebugging-brightgreen.svg)
 ![Support](https://img.shields.io/badge/Support-FullDump-brightgreen.svg)
 ![Support](https://img.shields.io/badge/Working-CompleteMemoryDump-yellow.svg)
 
 Video
 -------
-https://goo.gl/TBNaHf
+* ![Version](https://img.shields.io/badge/Version-proto.pegasus-brightgreen.svg) https://goo.gl/TBNaHf
+* ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg) working.
 
 Commands
 -------
 <pre>
-0:000> !attach
-eax=00a68320 ebx=009d0000 ecx=00000000 edx=00000000 esi=76536314 edi=76536308
-eip=00f41040 esp=007bf8f4 ebp=007bf938
-...
-00000000`00f41040 680821f400      push    offset test!`string' (00000000`00f42108)
-
-0:000> !mov eax 0
-mov   eax,0
-
-0:000> !regs
-eax=00000000 ebx=009d0000 ecx=00000000 edx=00000000 esi=76536314 edi=76536308
-eip=00f41040 esp=007bf8f4 ebp=007bf938
-...
-
-0:000> !swch
-64bit or 32bit
-...
-
-0:000> !trace
-eax=00a68320 ebx=009d0000 ecx=00000000 edx=00000000 esi=76536314 edi=76536308
-eip=00f41045 esp=007bf8f0 ebp=007bf938
-...
-00000000`00f41045 ff151020f400    call    qword ptr [00000000`01e8305b]
-
-0:000> !trace -r 00f4104b 
-eax=00a68320 ebx=009d0000 ecx=00000000 edx=00000000 esi=76536314 edi=76536308
-eip=7638cf60 esp=007bf8ec ebp=007bf938
-...
-00000000`7638cf60 8bff            mov     edi,edi
-...
-eax=77d70000 ebx=009d0000 ecx=2392c6cb edx=00000000 esi=76536314 edi=76536308
-eip=00f4104b esp=007bf8f4 ebp=007bf938
-...
-00000000`00f4104b 681c21f400      push    offset test!`string' (00000000`00f4211c)
-
-etc.
-</pre>
-
-Test
--------
-<pre>
-0:000> .load pegasus_x64.dll
-0:000> !wow64exts.sw
-0:000> !attach
-0:000> !trace
-0:000> !regs
-0:000> !trace -r [address]
++ .load pegasus.dll
++ !attach : debuggee is attached to emulator.
++ !trace : emulator cpu is activated.
+- bp : run to the end point. 
++ !steps : emulator step check.
 </pre>
