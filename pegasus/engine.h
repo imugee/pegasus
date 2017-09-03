@@ -22,9 +22,10 @@ public:
 	void detach();
 
 	void trace();
-	void regs();
+	void reg();
 
-	void mdump();
+	void dbvm();
+	void ddvm();
 
 	void steps();
 };

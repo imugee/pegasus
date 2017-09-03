@@ -12,9 +12,11 @@ EXPORTS
 
 	; emul
 	attach
-	;detach
+	detach
 	trace
-	;regs
-	mdump
+
+	reg
+	dbvm
+	ddvm
 
 	steps

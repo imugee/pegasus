@@ -196,6 +196,18 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 	}
 }
 
+EXT_CLASS_COMMAND(EmulationEngine, detach, "", "{;e,o;;;}")
+{
+	if (g_emulator)
+	{
+		g_trace_step_list.clear();
+		g_emulator->clear_ring3();
+		g_emulator.reset();
+	}
+}
+///
+///
+///
 #define PEGASUS_STEP_MODE
 
 EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
@@ -328,7 +340,7 @@ bool __stdcall is_ascii(char c)
 	return FALSE;
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, mdump, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}" "{d;b,o;d;;}" "{q;b,o;q;;}")
+EXT_CLASS_COMMAND(EmulationEngine, dbvm, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}")
 {
 	if (!g_emulator)
 		return;
@@ -342,11 +354,6 @@ EXT_CLASS_COMMAND(EmulationEngine, mdump, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}" "{d;
 
 	if(!g_emulator->read_page(address, dump, &size))
 		return;
-
-	if (HasArg("d"))
-	{
-		return;
-	}
 
 	unsigned int i = 0, j = 0;
 
@@ -390,4 +397,18 @@ EXT_CLASS_COMMAND(EmulationEngine, mdump, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}" "{d;
 			dprintf(".");
 	}
 	dprintf("\n");
+}
+
+EXT_CLASS_COMMAND(EmulationEngine, ddvm, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}")
+{
+	if (!g_emulator)
+		return;
+}
+
+EXT_CLASS_COMMAND(EmulationEngine, reg, "", "{;e,o;;;}")
+{
+	if (!g_emulator)
+		return;
+
+	g_emulator->log_print();
 }
