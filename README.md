@@ -24,6 +24,15 @@ Video
 * ![Version](https://img.shields.io/badge/Version-prototype.pegasus-brightgreen.svg) https://goo.gl/TBNaHf
 * ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg)
 
+Screenshot
+-------
+![](./screenshot/0.PNG)
+![](./screenshot/1.PNG)
+![](./screenshot/2.PNG)
+![](./screenshot/3.PNG)
+![](./screenshot/4.PNG)
+![](./screenshot/5.PNG)
+
 Commands
 -------
 <pre>
