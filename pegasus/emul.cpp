@@ -295,7 +295,11 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a si
 			else
 				break;
 		}
+#ifdef _WIN64
 	} while (bp && g_emulator->get_current_thread_context().Rip != bp);
+#else
+	} while (bp && g_emulator->get_current_thread_context().Eip != bp);
+#endif
 #endif
 	g_emulator->log_print();
 

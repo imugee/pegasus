@@ -473,18 +473,29 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 	uc_engine *uc = (uc_engine *)engine;
 	BYTE dump[1024];
 	_DInst di;
+#ifdef _WIN64
 	unsigned long long end_point = context_.Rip + 0x1000;
+#else
+	unsigned long long end_point = context_.Eip + 0x1000;
+#endif
 	unsigned long step = 1;
 
+#ifdef _WIN64
 	if (windbg_linker_.read_memory(context_.Rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
+#else
+	if (windbg_linker_.read_memory(context_.Eip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
+#endif
 	{
 		if (item.break_point)
 		{
 			end_point = item.break_point;
 			step = 0;
 		}
-
+#ifdef _WIN64
 		err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+#else
+		err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
+#endif
 		if (err)
 		{
 			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
@@ -493,7 +504,11 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 
 				do
 				{
+#ifdef _WIN64
 					err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+#else
+					err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
+#endif
 					++restart_count;
 				} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 3);
 			}
@@ -615,9 +630,13 @@ bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long l
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
 	if (uc_reg_write(uc, distorm_to_uc[di.ops[0].index], &teb_64_address_) != 0)
 		return false;
-
+#ifdef _WIN64
 	context_.Rip = ip + di.size;
 	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.Rip) != 0)
+#else
+	context_.Eip = ip + di.size;
+	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.Eip) != 0)
+#endif
 		return false;
 
 	return true;
@@ -652,8 +671,11 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 	BYTE dump[1024];
 	_DInst di;
 	uc_engine *uc = (uc_engine *)engine;
-
+#ifdef _WIN64
 	if (uc_mem_read(uc, context_.Rip, dump, 1024) != 0)
+#else
+	if (uc_mem_read(uc, context_.Eip, dump, 1024) != 0)
+#endif
 		return false;
 
 	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
@@ -671,8 +693,11 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 	unsigned long value = 0;
 	if (uc_mem_read(uc, return_register, &value, sizeof(value)) != 0)
 		return false;
-
+#ifdef _WIN64
 	context_.Rip = value;
+#else
+	context_.Eip = value;
+#endif
 	is_64_ = false;
 
 	return true;
@@ -683,14 +708,21 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 	uc_engine *uc = (uc_engine *)engine;
 	unsigned char dump[16] = { 0, };
 
+#ifdef _WIN64
 	if ((uc_mem_read(uc, context_.Rip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
+#else
+	if ((uc_mem_read(uc, context_.Eip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
+#endif
 	{
 		unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
 		unsigned long syscall = *syscall_ptr;
 
 		is_64_ = true;
+#ifdef _WIN64
 		context_.Rip = syscall;
-
+#else
+		context_.Eip = syscall;
+#endif
 		return true;
 	}
 
@@ -1049,6 +1081,7 @@ void __stdcall emulation_debugger::log_print()
 {
 	if (is_64_cpu())
 	{
+#ifdef _WIN64
 		dprintf("	rax="), print64(context_.Rax, backup_context_.Rax), dprintf(" ");
 		dprintf("rbx="), print64(context_.Rbx, backup_context_.Rbx), dprintf(" ");
 		dprintf("rcx="), print64(context_.Rcx, backup_context_.Rcx), dprintf("\n");
@@ -1072,9 +1105,11 @@ void __stdcall emulation_debugger::log_print()
 		dprintf("	r14="), print64(context_.R14, backup_context_.R14), dprintf(" ");
 		dprintf("r15="), print64(context_.R15, backup_context_.R15), dprintf(" ");
 		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
+#endif
 	}
 	else
 	{
+#ifdef _WIN64
 		dprintf("	eax="), print32(context_.Rax, backup_context_.Rax), dprintf(" ");
 		dprintf("ebx="), print32(context_.Rbx, backup_context_.Rbx), dprintf(" ");
 		dprintf("ecx="), print32(context_.Rcx, backup_context_.Rcx), dprintf(" ");
@@ -1086,14 +1121,31 @@ void __stdcall emulation_debugger::log_print()
 		dprintf("esp="), print32(context_.Rsp, backup_context_.Rsp), dprintf(" ");
 		dprintf("ebp="), print32(context_.Rbp, backup_context_.Rbp), dprintf(" ");
 		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
+#else
+		dprintf("	eax="), print32(context_.Eax, backup_context_.Eax), dprintf(" ");
+		dprintf("ebx="), print32(context_.Ebx, backup_context_.Ebx), dprintf(" ");
+		dprintf("ecx="), print32(context_.Ecx, backup_context_.Ecx), dprintf(" ");
+		dprintf("edx="), print32(context_.Edx, backup_context_.Edx), dprintf(" ");
+		dprintf("esi="), print32(context_.Esi, backup_context_.Esi), dprintf(" ");
+		dprintf("edi="), print32(context_.Edi, backup_context_.Edi), dprintf("\n");
+
+		dprintf("	eip="), print32(context_.Eip, backup_context_.Eip), dprintf(" ");
+		dprintf("esp="), print32(context_.Esp, backup_context_.Esp), dprintf(" ");
+		dprintf("ebp="), print32(context_.Ebp, backup_context_.Ebp), dprintf(" ");
+		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
+#endif
 	}
 
+#ifdef _WIN64
 	print_code(context_.Rip, 3);
+#else
+	print_code(context_.Eip, 3);
+#endif
 }
 
-#ifdef _WIN64
 void __stdcall emulation_debugger::clear_and_print()
 {
+#ifdef _WIN64
 	windbg_linker_.clear_screen();
 	print_code(context_.Rip, 10);
 
@@ -1137,8 +1189,8 @@ void __stdcall emulation_debugger::clear_and_print()
 		dprintf("ebp="), print32(context_.Rbp, backup_context_.Rbp), dprintf(" ");
 		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
 	}
-}
 #endif
+}
 
 CONTEXT __stdcall emulation_debugger::get_current_thread_context()
 {
