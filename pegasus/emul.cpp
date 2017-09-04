@@ -170,7 +170,7 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user
 ///
 ///
 ///
-EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
+EXT_CLASS_COMMAND(EmulationEngine, attach, "; 0:000> !attach command attached the current target application to the emulator.", "{;e,o;;no arguments.}")
 {
 	if (g_emulator)
 	{
@@ -196,7 +196,7 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{;e,o;;;}")
 	}
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, detach, "", "{;e,o;;;}")
+EXT_CLASS_COMMAND(EmulationEngine, detach, "; 0:000> !detach command detached the current target application to the emulator.", "{;e,o;;no arguments.}")
 {
 	if (g_emulator)
 	{
@@ -210,7 +210,7 @@ EXT_CLASS_COMMAND(EmulationEngine, detach, "", "{;e,o;;;}")
 ///
 #define PEGASUS_STEP_MODE
 
-EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
+EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a single instruction.", "{bp;ed,o;bp;break point.}" "{so;b,o;so;step over.}")
 {
 	if (!g_emulator)
 		return;
@@ -306,7 +306,7 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "", "{bp;ed,o;bp;;}" "{so;b,o;so;;}")
 //
 //
 //
-EXT_CLASS_COMMAND(EmulationEngine, steps, "", "{;e,o;;;}")
+EXT_CLASS_COMMAND(EmulationEngine, steps, "; 0:000> !steps command displays the trace step.", "{;e,o;;no arguments.}")
 {
 	std::list<unsigned long long>::iterator it = g_trace_step_list.begin();
 	int i = 0;
@@ -340,7 +340,7 @@ bool __stdcall is_ascii(char c)
 	return FALSE;
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, dbvm, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}")
+EXT_CLASS_COMMAND(EmulationEngine, dbvm, "; 0:000> !dbvm commands display the contents of memory in the given range.", "{a;ed,o;a;address}" "{l;ed,o;l;length}")
 {
 	if (!g_emulator)
 		return;
@@ -405,7 +405,7 @@ EXT_CLASS_COMMAND(EmulationEngine, ddvm, "", "{a;ed,o;a;;}" "{l;ed,o;l;;}")
 		return;
 }
 
-EXT_CLASS_COMMAND(EmulationEngine, reg, "", "{;e,o;;;}")
+EXT_CLASS_COMMAND(EmulationEngine, reg, "; 0:000> !reg command displays current registers.", "{;e,o;;no arguments.}")
 {
 	if (!g_emulator)
 		return;

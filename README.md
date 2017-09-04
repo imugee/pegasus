@@ -1,10 +1,7 @@
 Pegasus project
 ==============
-
-* ![Version](https://img.shields.io/badge/Version-proto.pegasus-lightgrey.svg) *windbg emulation plugin*
-* ![Version](https://img.shields.io/badge/Version-rc.pegasus-lightgrey.svg) *windbg emulation plugin*
 * ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg) *windbg emulation plugin*
-* ![Version](https://img.shields.io/badge/Version-0.2.dbgsuit-red.svg) *windbg anti anti reversing plugin*
+* ![Version](https://img.shields.io/badge/Version-0.2.dbgsuit-red.svg) *anti anti reversing plugin for windbg*
 
 Engine
 -------
@@ -24,15 +21,40 @@ Support
 
 Video
 -------
-* ![Version](https://img.shields.io/badge/Version-proto.pegasus-brightgreen.svg) https://goo.gl/TBNaHf
-* ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg) working.
+* ![Version](https://img.shields.io/badge/Version-prototype.pegasus-brightgreen.svg) https://goo.gl/TBNaHf
+* ![Version](https://img.shields.io/badge/Version-0.1.pegasus-brightgreen.svg)
 
 Commands
 -------
 <pre>
-+ .load pegasus.dll
-+ !attach : debuggee is attached to emulator.
-+ !trace : emulator cpu is activated.
-- bp : run to the end point. 
-+ !steps : emulator step check.
+0:000> .load pegasus.dll
+*****************************************************
+*                                                   *
+*         PEGASUS - Windbg emulation plugin         *
+*                                                   *
+*****************************************************
+
+0:000> !attach -?
+; 0:000> !attach command attached the current target application to the emulator.
+
+0:000> !detach -?
+; 0:000> !detach command detached the current target application to the emulator.
+
+0:000> !trace -?
+; !trace [/so] [/bp <bp>]
+;  /bp - break point. (space-delimited)
+;  /so - step over.
+; 0:000> !trace command executes a single instruction.
+
+0:000> !steps -?
+; 0:000> !steps command displays the trace step.
+
+0:000> !dbvm -?
+; !dbvm [/a <a>] [/l <l>]
+;  /a <a> - address (space-delimited)
+;  /l <l> - length (space-delimited)
+; 0:000> !dbvm commands display the contents of memory in the given range.
+
+0:000> !regs -?
+; 0:000> !reg command displays current registers.
 </pre>
