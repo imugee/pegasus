@@ -13,6 +13,8 @@ typedef struct _EMULATOR_TRACE_
 	void *fetch_callback;
 	void *read_callback;
 	void *write_callback;
+
+	char path[MAX_PATH];
 }trace_item;
 
 class emulation_debugger : public engine::debugger
@@ -40,29 +42,20 @@ private:
 
 	bool is_64_;
 
-	wchar_t ring0_path_[MAX_PATH];
-	wchar_t ring3_path_[MAX_PATH];
-	wchar_t log_path_[MAX_PATH];
+	wchar_t storage_path_[MAX_PATH];
+
+	unsigned long storage_count_;
 
 private:
-	virtual bool __stdcall write_binary(unsigned long long address);
-	virtual bool __stdcall file_query_ring3(unsigned long long value, wchar_t *file_name, size_t *size);
-
 	virtual bool __stdcall is_wow64cpu();
 
-	virtual void __stdcall install();
-	virtual bool __stdcall setup();
-
 	virtual bool __stdcall load(void *engine, unsigned long long load_address, size_t load_size, void *dump, size_t write_size);
-	virtual bool __stdcall load_gdt(void *engine);
-	virtual bool __stdcall load_context(void *engine, unsigned long mode);
 
 	virtual void __stdcall set_global_descriptor(SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code);
-	virtual bool __stdcall create_global_descriptor_table();
 
+	virtual bool __stdcall load_context(void *engine, unsigned long mode);
 	virtual bool __stdcall write_x86_cpu_context(void *engine);
 	virtual bool __stdcall read_x86_cpu_context(void *engine);
-
 	virtual bool __stdcall write_x64_cpu_context(void *engine);
 	virtual bool __stdcall read_x64_cpu_context(void *engine);
 
@@ -77,28 +70,12 @@ private:
 	void __stdcall print32(unsigned long long, unsigned long long);
 
 	virtual bool __stdcall trace(void *engine, trace_item item);
-	virtual bool __stdcall backup(void *engine);
 
 public:
-	virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size);
-	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
-	virtual bool __stdcall clear_ring3();
-	virtual void __stdcall current_regs();
-
-	virtual bool __stdcall read_page(unsigned long long address, unsigned char *dump, size_t *size);
-
-	virtual CONTEXT __stdcall get_current_thread_context();
-
-public:
-	emulation_debugger() : is_64_(false), engine_(nullptr) {}
+	emulation_debugger() : is_64_(false), engine_(nullptr), storage_count_(0) {}
 	~emulation_debugger();
 
 	virtual bool __stdcall is_64_cpu();
-
-	virtual bool __stdcall attach();
-	virtual bool __stdcall trace(void *mem);
-
-	virtual CONTEXT __stdcall current_thread_context();
 
 	void __stdcall print_code(unsigned long long ip, unsigned long line);
 	virtual void * __stdcall get_windbg_linker();
@@ -106,10 +83,30 @@ public:
 	virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip);
 	virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip);
 
-	virtual void __stdcall clear_and_print();
 	virtual void __stdcall log_print();
-	virtual void __stdcall close();
-	virtual bool __stdcall backup();
+	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
+	virtual void __stdcall current_regs();
+	virtual CONTEXT __stdcall get_current_thread_context();
+
+	virtual bool __stdcall attach(void *mem);
+	virtual bool __stdcall switch_cpu(void *mem);
+	virtual bool __stdcall reboot(void *mem);
+	virtual bool __stdcall trace_ex(void *mem);
+
+	virtual bool __stdcall load(void *address);
+
+	virtual bool __stdcall set_environment_block();
+	virtual bool __stdcall create_global_descriptor_table_ex();
+
+	virtual bool __stdcall setting(char *path);
+	virtual bool __stdcall store();
+	virtual bool __stdcall query_storage_memory(unsigned long long value, wchar_t *file_name, size_t *size);
+	virtual unsigned char * __stdcall load_storage_memory(unsigned long long value, unsigned long long *base, size_t *size);
+	virtual bool __stdcall load_page(unsigned long long value);
+	virtual bool __stdcall load_context(void *mem);
+
+	virtual bool __stdcall query(unsigned long long address, unsigned long long *base, size_t *size);
+	virtual bool __stdcall read(unsigned long long address, unsigned char *dump, size_t *size);
 };
 
 #define DISTORM_TO_UC_REGS \

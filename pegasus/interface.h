@@ -55,29 +55,38 @@ namespace engine
 	public:
 		virtual ~debugger() {}
 
-		virtual unsigned char * __stdcall load_page(unsigned long long value, unsigned long long *base, size_t *size) = 0;
-
 		virtual bool __stdcall is_64_cpu() = 0;
-		virtual bool __stdcall attach() = 0;
-		virtual bool __stdcall trace(void *mem) = 0;
-
-		virtual CONTEXT __stdcall current_thread_context() = 0;
-		virtual bool __stdcall clear_ring3() = 0;
-		virtual void __stdcall current_regs() = 0;
-		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
-		virtual void * __stdcall get_windbg_linker() = 0;
 
 		virtual void __stdcall print_code(unsigned long long ip, unsigned long line) = 0;
+		virtual void * __stdcall get_windbg_linker() = 0;
 
 		virtual bool __stdcall mnemonic_mov_gs(void *engine, unsigned long long ip) = 0;
 		virtual bool __stdcall mnemonic_mov_ss(void *engine, unsigned long long ip) = 0;
 
-		virtual bool __stdcall read_page(unsigned long long address, unsigned char *dump, size_t *size) = 0;
-
-		virtual CONTEXT __stdcall get_current_thread_context() = 0;
 		virtual void __stdcall log_print() = 0;
-		virtual void __stdcall close() = 0;
-		virtual bool __stdcall backup() = 0;
+		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
+		virtual void __stdcall current_regs() = 0;
+		virtual CONTEXT __stdcall get_current_thread_context() = 0;
+
+		virtual bool __stdcall attach(void *mem) = 0;
+		virtual bool __stdcall switch_cpu(void *mem) = 0;
+		virtual bool __stdcall reboot(void *mem) = 0;
+		virtual bool __stdcall trace_ex(void *mem) = 0;
+
+		virtual bool __stdcall load(void *address) = 0;
+
+		virtual bool __stdcall set_environment_block() = 0;
+		virtual bool __stdcall create_global_descriptor_table_ex() = 0;
+
+		virtual bool __stdcall setting(char *path) = 0;
+		virtual bool __stdcall store() = 0;
+		virtual bool __stdcall query_storage_memory(unsigned long long value, wchar_t *file_name, size_t *size) = 0;
+		virtual unsigned char * __stdcall load_storage_memory(unsigned long long value, unsigned long long *base, size_t *size) = 0;
+		virtual bool __stdcall load_page(unsigned long long value) = 0;
+		virtual bool __stdcall load_context(void *mem) = 0;
+
+		virtual bool __stdcall query(unsigned long long address, unsigned long long *base, size_t *size) = 0;
+		virtual bool __stdcall read(unsigned long long address, unsigned char *dump, size_t *size) = 0;
 	};
 
 	class linker

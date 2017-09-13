@@ -23,9 +23,7 @@
 #else
 #pragma comment(lib, "unicorn_static.lib")
 #endif
-//
-//
-//
+
 emulation_debugger::~emulation_debugger()
 {
 	if (engine_)
@@ -34,7 +32,9 @@ emulation_debugger::~emulation_debugger()
 		uc_close(uc);
 	}
 }
-
+//
+//
+//
 bool __stdcall emulation_debugger::load(void *engine, unsigned long long load_address, size_t load_size, void *dump, size_t write_size)
 {
 	if (!engine)
@@ -52,6 +52,126 @@ bool __stdcall emulation_debugger::load(void *engine, unsigned long long load_ad
 		if (err != UC_ERR_MAP)
 			return false;
 	}
+	return true;
+}
+
+bool __stdcall emulation_debugger::load(void *address)
+{
+	if (!engine_)
+		return false;
+
+	uc_engine *uc = (uc_engine *)engine_;
+	MEMORY_BASIC_INFORMATION64 mbi;
+	memset(&mbi, 0, sizeof(mbi));
+	if (!windbg_linker_.virtual_query((unsigned long long)address, &mbi))
+		return false;
+
+	unsigned char *dump = (unsigned char *)malloc((size_t)mbi.RegionSize);
+	if (!dump)
+		return false;
+	std::shared_ptr<void> dump_closer(dump, free);
+
+	if (!windbg_linker_.read_memory(mbi.BaseAddress, dump, (size_t)mbi.RegionSize))
+		return false;
+
+	uc_err err;
+	if ((err = uc_mem_map(uc, mbi.BaseAddress, (size_t)mbi.RegionSize, UC_PROT_ALL)) != 0)
+	{
+		if (err != UC_ERR_MAP)
+			return false;
+	}
+
+	if ((err = uc_mem_write(uc, mbi.BaseAddress, dump, (size_t)mbi.RegionSize)) != 0)
+		return false;
+
+	return true;
+}
+//
+//
+//
+bool __stdcall emulation_debugger::query(unsigned long long address, unsigned long long *base, size_t *size)
+{
+	if (!engine_)
+		return false;
+
+	uc_engine *uc = (uc_engine *)engine_;
+	uc_mem_region *um = nullptr;
+	uint32_t count = 0;
+
+	if (uc_mem_regions(uc, &um, &count) != 0)
+		return false;
+	std::shared_ptr<void> uc_memory_closer(um, free);
+
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		if (address >= um[i].begin && address <= um[i].end)
+		{
+			*base = um[i].begin;
+			*size = um[i].end - um[i].begin;
+			
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool __stdcall emulation_debugger::read(unsigned long long address, unsigned char *dump, size_t *size)
+{
+	if (!engine_)
+		return false;
+
+	unsigned long long base = 0;
+	size_t region_size = 0;
+
+	if (!query(address, &base, &region_size))
+		return nullptr;
+
+	unsigned char *d = (unsigned char *)malloc(region_size);
+	if (!d)
+		return nullptr;
+	std::shared_ptr<void> dump_closer(d, free);
+	memset(d, 0, region_size);
+
+	uc_engine * uc = (uc_engine *)engine_;
+	if(uc_mem_read(uc, base, d, region_size) != 0)
+		return nullptr;
+
+	unsigned long long offset = address - base;
+	if (region_size - offset < *size)
+		*size = region_size - offset;
+
+	memcpy(dump, &d[offset], *size);
+
+	return true;
+}
+//
+//
+//
+bool __stdcall emulation_debugger::set_environment_block()
+{
+	peb_address_ = windbg_linker_.get_peb_address();
+	teb_address_ = windbg_linker_.get_teb_address();
+
+	if (!peb_address_ || !teb_address_)
+		return false;
+
+	if (is_wow64cpu())
+	{
+		teb_64_address_ = teb_address_;
+		NT_TIB64 tib_64;
+		if (!windbg_linker_.read_memory(teb_64_address_, &tib_64, sizeof(tib_64)))
+			return false;
+		teb_address_ = tib_64.ExceptionList;
+
+		peb_64_address_ = peb_address_;
+		unsigned char teb32[1024];
+		if (!windbg_linker_.read_memory(teb_address_, &teb32, sizeof(teb32)))
+			return false;
+
+		peb_address_ = *((unsigned long long *)&teb32[0x30]);
+	}
+
 	return true;
 }
 
@@ -77,8 +197,9 @@ void __stdcall emulation_debugger::set_global_descriptor(SegmentDescriptor *desc
 	desc->system = 1;
 }
 
-bool __stdcall emulation_debugger::create_global_descriptor_table()
+bool __stdcall emulation_debugger::create_global_descriptor_table_ex()
 {
+	uc_engine *uc = (uc_engine *)engine_;
 	SegmentDescriptor global_descriptor[31];
 	memset(global_descriptor, 0, sizeof(global_descriptor));
 
@@ -95,19 +216,22 @@ bool __stdcall emulation_debugger::create_global_descriptor_table()
 	set_global_descriptor(&global_descriptor[context_.SegSs >> 3], 0, 0xfffff000, 0);
 	global_descriptor[context_.SegSs >> 3].dpl = 0; // dpl = 0, cpl = 0
 
-	wchar_t name[MAX_PATH];
-	wmemset(name, 0, MAX_PATH);
-	if (!_ui64tow(gdt_base_, name, 16))
+	gdt_base_ = 0xc0000000;
+	uc_x86_mmr gdtr;
+	gdtr.base = gdt_base_;
+	gdtr.limit = (sizeof(SegmentDescriptor) * 31) - 1;
+
+	if (uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr) != 0)
 		return false;
 
-	if (!windbg_linker_.write_binary(ring3_path_, name, (unsigned char *)global_descriptor, sizeof(global_descriptor)))
+	if (!load(uc, gdt_base_, 0x10000, global_descriptor, sizeof(global_descriptor)))
 		return false;
 
 	return true;
 }
-///
-///
-///
+//
+//
+//
 bool __stdcall emulation_debugger::read_x86_cpu_context(void *engine)
 {
 	int x86_register[] = { UC_X86_REGISTER_SET };
@@ -332,75 +456,6 @@ bool __stdcall emulation_debugger::write_x64_cpu_context(void *engine)
 #endif
 	return true;
 }
-//
-//
-//
-void __stdcall emulation_debugger::install()
-{
-	wmemset(ring0_path_, 0, MAX_PATH);
-	wmemset(ring3_path_, 0, MAX_PATH);
-	wmemset(log_path_, 0, MAX_PATH);
-
-	GetCurrentDirectory(MAX_PATH, ring0_path_);
-	StringCbCat(ring0_path_, MAX_PATH, L"\\ring0");
-	CreateDirectory(ring0_path_, FALSE);
-
-	StringCbCopy(log_path_, MAX_PATH, ring0_path_);
-
-	StringCbCopy(ring3_path_, MAX_PATH, ring0_path_);
-	StringCbCat(ring3_path_, MAX_PATH, L"\\ring3");
-	CreateDirectory(ring3_path_, FALSE);
-}
-
-bool __stdcall emulation_debugger::setup()
-{
-	if (!windbg_linker_.get_context(&context_, sizeof(context_)))
-		return false;
-#ifdef _WIN64
-	if(!write_binary(context_.Rip)) // code
-		return false;
-
-	if (!write_binary(context_.Rsp)) // stack
-		return false;
-#else
-	if (!write_binary(context_.Eip)) // code
-		return false;
-
-	if (!write_binary(context_.Esp)) // stack
-		return false;
-#endif
-
-	if (!write_binary(teb_address_))
-		return false;
-
-	gdt_base_ = 0xc0000000;
-	if (!create_global_descriptor_table())
-		return false;
-
-	return true;
-}
-
-bool __stdcall emulation_debugger::load_gdt(void *engine)
-{
-	emulation_debugger::page gdt_page;
-	unsigned char * gdt_dump = nullptr;
-
-	gdt_dump = load_page(gdt_base_, &gdt_page.base, &gdt_page.size);
-	if (!gdt_dump) return false;
-	std::shared_ptr<void> gdt_dump_closer(gdt_dump, free);
-
-	uc_x86_mmr gdtr;
-	gdtr.base = gdt_base_;
-	gdtr.limit = (sizeof(SegmentDescriptor) * 31) - 1;
-
-	if (uc_reg_write((uc_engine *)engine, UC_X86_REG_GDTR, &gdtr) != 0)
-		return false;
-
-	if (!load(engine, gdt_page.base, 0x10000, gdt_dump, gdt_page.size))
-		return false;
-
-	return true;
-}
 
 bool __stdcall emulation_debugger::load_context(void *engine, unsigned long mode)
 {
@@ -419,175 +474,8 @@ bool __stdcall emulation_debugger::load_context(void *engine, unsigned long mode
 
 	return true;
 }
-
-bool __stdcall emulation_debugger::attach()
-{
-	bool is_32 = false;
-
-	if (is_wow64cpu() && g_Ext->IsCurMachine64())
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-
-	if (g_Ext->IsCurMachine32())
-	{
-		is_32 = true;
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-	}
-	else
-		is_64_ = true;
-
-	peb_address_ = windbg_linker_.get_peb_address();
-	teb_address_ = windbg_linker_.get_teb_address();
-
-	if (!peb_address_ || !teb_address_)
-		return false;
-
-	if (is_wow64cpu())
-	{
-		teb_64_address_ = teb_address_;
-		NT_TIB64 tib_64;
-		if (!windbg_linker_.read_memory(teb_64_address_, &tib_64, sizeof(tib_64)))
-			return false;
-		teb_address_ = tib_64.ExceptionList;
-
-		peb_64_address_ = peb_address_;
-		unsigned char teb32[1024];
-		if (!windbg_linker_.read_memory(teb_address_, &teb32, sizeof(teb32)))
-			return false;
-
-		peb_address_ = *((unsigned long long *)&teb32[0x30]);
-	}
-
-	install();
-	if(!setup())
-		return false;
-
-	if (is_32)
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-
-	return true;
-}
-
-bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
-{
-	uc_err err = (uc_err)0;
-	uc_engine *uc = (uc_engine *)engine;
-	BYTE dump[1024];
-	_DInst di;
-#ifdef _WIN64
-	unsigned long long end_point = context_.Rip + 0x1000;
-#else
-	unsigned long long end_point = context_.Eip + 0x1000;
-#endif
-	unsigned long step = 1;
-
-#ifdef _WIN64
-	if (windbg_linker_.read_memory(context_.Rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
-#else
-	if (windbg_linker_.read_memory(context_.Eip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
-#endif
-	{
-		if (item.break_point)
-		{
-			end_point = item.break_point;
-			step = 0;
-		}
-#ifdef _WIN64
-		err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-#else
-		err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
-#endif
-		if (err)
-		{
-			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
-			{
-				unsigned restart_count = 0;
-
-				do
-				{
-#ifdef _WIN64
-					err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-#else
-					err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
-#endif
-					++restart_count;
-				} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 3);
-			}
-		}
-	}
-	else
-	{
-		err = UC_ERR_EXCEPTION;
-	}
-
-	backup_context_ = context_;
-
-	if (is_64_)
-	{
-		if (!read_x64_cpu_context(uc))
-		{
-			return false;
-		}
-	}
-	else
-	{
-		if (!read_x86_cpu_context(uc))
-		{
-			return false;
-		}
-	}
-
-	if (err)
-	{
-		//dprintf("break::e::%d\n", err);
-
-		return false;
-	}
-
-	return true;
-}
-
-bool __stdcall emulation_debugger::trace(void *mem)
-{
-	uc_hook code_hook;
-	uc_hook write_unmap_hook;
-	uc_hook read_unmap_hook;
-	uc_hook fetch_hook;
-	uc_engine *uc = nullptr;
-	trace_item *item = (trace_item *)mem;
-	bool s = true;
-
-	if (!engine_)
-	{
-		if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
-			return false;
-		//std::shared_ptr<void> uc_closer(uc, uc_close);
-
-		uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
-		uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-		uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
-		uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
-
-		if (!load_gdt(uc) || !load_context(uc, item->mode))
-			return false;
-
-		engine_ = uc;
-	}
-	else
-	{
-		uc = (uc_engine *)engine_;
-	}
-	
-	if (!trace(uc, *item))
-	{
-		mnemonic_switch_wow64cpu(uc);
-		mnemonic_wow_ret(uc);
-		s = false;
-	}
-
-	return s;
-}
 //
-// 
+//
 //
 bool __stdcall emulation_debugger::disasm(void *code, size_t size, uint32_t dt, void *out)
 {
@@ -609,9 +497,7 @@ bool __stdcall emulation_debugger::disasm(void *code, size_t size, uint32_t dt, 
 
 	return true;
 }
-//
-// exception mnemonic
-//
+
 bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long long ip)
 {
 	BYTE dump[1024];
@@ -729,7 +615,575 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 	return false;
 }
 //
-//	https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/customizing-debugger-output-using-dml
+// storage memory
+//
+bool __stdcall emulation_debugger::setting(char *path)
+{
+	int l = MultiByteToWideChar(CP_ACP, 0, path, (int)strlen(path), NULL, NULL);
+
+	if (l == 0)
+		return false;
+
+	ZeroMemory(storage_path_, MAX_PATH);
+	l = MultiByteToWideChar(CP_ACP, 0, path, (int)strlen(path), storage_path_, l);
+
+	if (l == 0)
+		return false;
+
+	wchar_t max_path[MAX_PATH];
+	wchar_t storage[MAX_PATH];
+
+	_itow(storage_count_, storage, 10);
+	StringCbCopy(max_path, MAX_PATH, storage_path_);
+	StringCbCat(max_path, MAX_PATH, L"\\");
+	StringCbCat(max_path, MAX_PATH, storage);
+
+	if (!CreateDirectory(max_path, FALSE) && GetLastError() != ERROR_ALREADY_EXISTS)
+		return false;
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::store()
+{
+	uc_engine *uc = (uc_engine *)engine_;
+	uc_mem_region *um = nullptr;
+	uint32_t count = 0;
+
+	if (uc_mem_regions(uc, &um, &count) != 0)
+		return false;
+	std::shared_ptr<void> uc_memory_closer(um, free);
+
+	wchar_t max_path[MAX_PATH];
+	wchar_t storage[MAX_PATH];
+
+	_itow(storage_count_, storage, 10);
+	StringCbCopy(max_path, MAX_PATH, storage_path_);
+	StringCbCat(max_path, MAX_PATH, L"\\");
+	StringCbCat(max_path, MAX_PATH, storage);
+
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		size_t size = um[i].end - um[i].begin + 1;
+		unsigned char *dump = (unsigned char *)malloc(size);
+
+		if (!dump)
+			return false;
+
+		memset(dump, 0, size);
+		std::shared_ptr<void> dump_closer(dump, free);
+
+		if (uc_mem_read(uc, um[i].begin, dump, size) != 0)
+			return false;
+
+		wchar_t name[MAX_PATH];
+		wmemset(name, 0, MAX_PATH);
+		if (!_ui64tow(um[i].begin, name, 16))
+			return false;
+
+		if (!windbg_linker_.write_binary(max_path, name, dump, size))
+			return false;
+	}
+
+	wchar_t name[MAX_PATH];
+	wmemset(name, 0, MAX_PATH);
+	if (!_ui64tow(0xCCCCCCCC, name, 16))
+		return false;
+
+	if (!windbg_linker_.write_binary(max_path, name, (unsigned char *)&context_, sizeof(context_)))
+		return false;
+
+	++storage_count_;
+	return true;
+}
+
+bool __stdcall emulation_debugger::query_storage_memory(unsigned long long value, wchar_t *file_name, size_t *size)
+{
+	WIN32_FIND_DATA wfd;
+	wchar_t path[MAX_PATH] = { 0, };
+	wchar_t storage[MAX_PATH];
+
+	_itow(storage_count_, storage, 10);
+	StringCbCopy(path, MAX_PATH, storage_path_);
+	StringCbCat(path, MAX_PATH, L"\\");
+	StringCbCat(path, MAX_PATH, storage);
+	StringCbCat(path, MAX_PATH, L"\\*.*");
+
+	HANDLE h_file = FindFirstFile(path, &wfd);
+
+	if (h_file == INVALID_HANDLE_VALUE)
+		return false;
+	std::shared_ptr<void> file_closer(h_file, CloseHandle);
+
+	do
+	{
+		wchar_t *end = nullptr;
+		unsigned long long base_address = wcstoll(wfd.cFileName, &end, 16);
+		size_t region_size = (wfd.nFileSizeHigh * ((unsigned)0x100000000) + wfd.nFileSizeLow);
+		unsigned long long end_address = base_address + region_size;
+
+		if (base_address <= value && value < end_address)
+		{
+			if (file_name && size)
+			{
+				*size = region_size;
+				StringCbCopy(file_name, MAX_PATH, wfd.cFileName);
+				return true;
+			}
+		}
+	} while (FindNextFile(h_file, &wfd));
+
+	return false;
+}
+
+unsigned char * __stdcall emulation_debugger::load_storage_memory(unsigned long long value, unsigned long long *base, size_t *size)
+{
+	wchar_t *end = nullptr;
+	wchar_t name[MAX_PATH];
+	size_t region_size = 0;
+	wmemset(name, 0, MAX_PATH);
+
+	if (!query_storage_memory(value, name, &region_size))
+		return nullptr;
+
+	unsigned char *dump = (unsigned char *)malloc(region_size);
+
+	if (!dump)
+		return nullptr;
+
+	memset(dump, 0, region_size);
+
+	wchar_t max_path[MAX_PATH];
+	wchar_t storage[MAX_PATH];
+
+	_itow(storage_count_, storage, 10);
+	StringCbCopy(max_path, MAX_PATH, storage_path_);
+	StringCbCat(max_path, MAX_PATH, L"\\");
+	StringCbCat(max_path, MAX_PATH, storage);
+
+	if (!windbg_linker_.read_binary(max_path, name, dump, region_size))
+		return nullptr;
+
+	*base = wcstoull(name, &end, 16);
+	*size = region_size;
+
+	return dump;
+}
+
+bool __stdcall emulation_debugger::load_page(unsigned long long value)
+{
+	emulation_debugger::page p;
+	unsigned char *dump = load_storage_memory(value, &p.base, &p.size);
+
+	if (!dump) 
+		return false;
+
+	std::shared_ptr<void> dump_closer(dump, free);
+
+	if (!load(engine_, p.base, p.size, dump, p.size))
+		return false;
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::load_context(void *mem)
+{
+	emulation_debugger::page p;
+	trace_item *item = (trace_item *)mem;
+	unsigned char *dump = load_storage_memory(0xCCCCCCCC, &p.base, &p.size);
+
+	if (!dump)
+		return false;
+	std::shared_ptr<void> dump_closer(dump, free);
+
+	memcpy(&context_, dump, p.size);
+
+	if (!load_context(engine_, item->mode))
+		return false;
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::reboot(void *mem)
+{
+	bool is_32 = false;
+
+	if (g_Ext->IsCurMachine32())
+	{
+		is_32 = true;
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+	}
+	else
+		is_64_ = true;
+
+	uc_hook code_hook;
+	uc_hook write_unmap_hook;
+	uc_hook read_unmap_hook;
+	uc_hook fetch_hook;
+	uc_engine *uc = nullptr;
+	trace_item *item = (trace_item *)mem;
+
+	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
+		return false;
+
+	engine_ = uc;
+	uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
+
+	if (!load_page(teb_address_))
+		return false;
+
+	if (!load_page(peb_64_address_))
+		return false;
+
+	if (teb_64_address_ || peb_64_address_)
+	{
+		if (!load_page(teb_64_address_))
+			return false;
+
+		if (!load_page(peb_64_address_))
+			return false;
+	}
+
+	gdt_base_ = 0xc0000000;
+	uc_x86_mmr gdtr;
+	gdtr.base = gdt_base_;
+	gdtr.limit = (sizeof(SegmentDescriptor) * 31) - 1;
+
+	if (uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr) != 0)
+		return false;
+
+	if (!load_page(gdt_base_))
+		return false;
+
+	if (!load_context(item))
+		return false;
+
+#ifdef _WIN64
+	if (!load_page(context_.Rip))
+		return false;
+
+	if (!load_page(context_.Rsp))
+		return false;
+#else
+	if (!load_page(context_.Eip))
+		return false;
+
+	if (!load_page(context_.Esp))
+		return false;
+#endif
+	if (is_32)
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+
+	return true;
+}
+//
+//
+//
+bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, load_gdt에서 실패하게 된다.
+{
+	bool is_32 = false;
+
+	if (is_wow64cpu() && g_Ext->IsCurMachine64())
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+
+	if (g_Ext->IsCurMachine32())
+	{
+		is_32 = true;
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+	}
+	else
+		is_64_ = true;
+
+	uc_hook code_hook;
+	uc_hook write_unmap_hook;
+	uc_hook read_unmap_hook;
+	uc_hook fetch_hook;
+	uc_engine *uc = nullptr;
+	trace_item *item = (trace_item *)mem;
+
+	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &uc) != 0)
+		return false;
+
+	engine_ = uc;
+	uc_hook_add(uc, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(uc, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
+
+	if (!set_environment_block())
+		return false;
+
+	if (!load((void *)teb_address_))
+		return false;
+
+	if (!load((void *)peb_address_))
+		return false;
+
+	if (teb_64_address_ || peb_64_address_)
+	{
+		if (!load((void *)teb_64_address_))
+			return false;
+
+		if (!load((void *)peb_64_address_))
+			return false;
+	}
+
+	if (!windbg_linker_.get_context(&context_, sizeof(context_)))
+		return false;
+
+	if (!create_global_descriptor_table_ex())
+		return false;
+
+	if (!load_context(uc, item->mode))
+		return false;
+
+#ifdef _WIN64
+	if (!load((void *)context_.Rip))
+		return false;
+
+	if (!load((void *)context_.Rsp))
+		return false;
+#else
+	if (!load((void *)context_.Eip))
+		return false;
+
+	if (!load((void *)context_.Esp))
+		return false;
+#endif
+	if (!setting(item->path))
+		return false;
+
+	if (is_32)
+		g_Ext->ExecuteSilent("!wow64exts.sw");
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
+{
+	uc_err err = (uc_err)0;
+	uc_engine *uc = (uc_engine *)engine;
+	BYTE dump[1024];
+	_DInst di;
+#ifdef _WIN64
+	unsigned long long end_point = context_.Rip + 0x1000;
+#else
+	unsigned long long end_point = context_.Eip + 0x1000;
+#endif
+	unsigned long step = 1;
+
+#ifdef _WIN64
+	if (windbg_linker_.read_memory(context_.Rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
+#else
+	if (windbg_linker_.read_memory(context_.Eip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
+#endif
+	{
+		if (item.break_point)
+		{
+			end_point = item.break_point;
+			step = 0;
+		}
+#ifdef _WIN64
+		err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+#else
+		err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
+#endif
+		if (err)
+		{
+			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
+			{
+				unsigned restart_count = 0;
+
+				do
+				{
+#ifdef _WIN64
+					err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
+#else
+					err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
+#endif
+					++restart_count;
+				} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 3);
+			}
+		}
+	}
+	else
+	{
+		err = UC_ERR_EXCEPTION;
+	}
+
+	backup_context_ = context_;
+
+	if (is_64_)
+	{
+		if (!read_x64_cpu_context(uc))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!read_x86_cpu_context(uc))
+		{
+			return false;
+		}
+	}
+
+	if (err)
+	{
+		dprintf("break::e::%d\n", err);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool __stdcall emulation_debugger::trace_ex(void *mem)
+{
+	uc_engine *	uc = (uc_engine *)engine_;
+	trace_item *item = (trace_item *)mem;
+	bool s = true;
+
+	if (!trace(uc, *item))
+	{
+		mnemonic_switch_wow64cpu(uc);
+		mnemonic_wow_ret(uc);
+		s = false;
+	}
+
+	return s;
+}
+//
+//
+//
+bool __stdcall emulation_debugger::switch_cpu(void *mem)
+{
+	uc_engine *current_engine = (uc_engine *)engine_;
+	uc_engine *switch_engine = nullptr;
+
+	uc_hook code_hook;
+	uc_hook write_unmap_hook;
+	uc_hook read_unmap_hook;
+	uc_hook fetch_hook;
+	trace_item *item = (trace_item *)mem;
+
+	if (uc_open(UC_ARCH_X86, (uc_mode)item->mode, &switch_engine) != 0)
+		return false;
+
+	uc_hook_add(switch_engine, &code_hook, UC_HOOK_CODE, item->code_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(switch_engine, &write_unmap_hook, UC_HOOK_MEM_WRITE_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(switch_engine, &read_unmap_hook, UC_HOOK_MEM_READ_UNMAPPED, item->unmap_callback, NULL, (uint64_t)1, (uint64_t)0);
+	uc_hook_add(switch_engine, &fetch_hook, UC_HOOK_MEM_FETCH_UNMAPPED, item->fetch_callback, NULL, (uint64_t)1, (uint64_t)0);
+
+	uc_mem_region *um = nullptr;
+	uint32_t count = 0;
+
+	if (uc_mem_regions(current_engine, &um, &count) != 0)
+		return false;
+	std::shared_ptr<void> um_closer(um, free);
+
+	bool s = true;
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		size_t size = (um[i].end + 1) - um[i].begin;
+		unsigned char *dump = (unsigned char *)malloc(size);
+
+		if (!dump)
+		{
+			s = false;
+			break;
+		}
+
+		if (uc_mem_read(current_engine, um[i].begin, dump, size) != 0)
+		{
+			s = false;
+			break;
+		}
+
+		if (!load(switch_engine, um[i].begin, size, dump, size))
+		{
+			s = false;
+			break;
+		}
+	}
+
+	if (!s)
+	{
+		uc_close(switch_engine);
+		return false;
+	}
+
+	gdt_base_ = 0xc0000000;
+	uc_x86_mmr gdtr;
+	gdtr.base = gdt_base_;
+	gdtr.limit = (sizeof(SegmentDescriptor) * 31) - 1;
+
+	if (uc_reg_write(switch_engine, UC_X86_REG_GDTR, &gdtr) != 0)
+	{
+		uc_close(switch_engine);
+		return false;
+	}
+
+	if (!load_context(switch_engine, item->mode))
+	{
+		uc_close(switch_engine);
+		return false;
+	}
+
+	uc_close(current_engine);
+	engine_ = switch_engine;
+
+	return true;
+}
+//
+//
+//
+size_t __stdcall emulation_debugger::alignment(size_t region_size, unsigned long image_aligin)
+{
+	unsigned long mod = region_size % image_aligin;
+	region_size -= mod;
+
+	return region_size + image_aligin;
+}
+
+bool __stdcall emulation_debugger::is_wow64cpu()
+{
+	unsigned long long teb_address = windbg_linker_.get_teb_address();
+	NT_TIB64 tib_64;
+
+	if (!windbg_linker_.read_memory(teb_address, &tib_64, sizeof(tib_64)))
+		return false;
+
+	if (teb_address == tib_64.Self)
+		return true;
+
+	return false;
+}
+
+bool __stdcall emulation_debugger::is_64_cpu()
+{
+	return is_64_;
+}
+
+void __stdcall emulation_debugger::current_regs()
+{
+	log_print();
+}
+
+void * __stdcall emulation_debugger::get_windbg_linker()
+{
+	return &windbg_linker_;
+}
+
+CONTEXT __stdcall emulation_debugger::get_current_thread_context()
+{
+	return context_;
+}
+//
+//
 //
 void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned long line)
 {
@@ -753,7 +1207,7 @@ void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned lo
 	for (unsigned int i = 0; i<(line * 2 + 1); ++i)
 	{
 		unsigned long long next = index;
-		if(Disasm(&next, mnemonic, 0))
+		if (Disasm(&next, mnemonic, 0))
 		{
 			if (index == ip)
 				g_Ext->Dml("<b><col fg=\"emphfg\">	%s</col></b>", mnemonic);
@@ -801,280 +1255,6 @@ unsigned long long emulation_debugger::before(unsigned long long offset)
 	} while (b < offset && b != offset);
 
 	return b - di.size;
-}
-//
-// segment manager
-//
-bool __stdcall emulation_debugger::file_query_ring3(unsigned long long value, wchar_t *file_name, size_t *size)
-{
-	WIN32_FIND_DATA wfd;
-	wchar_t path[MAX_PATH] = { 0, };
-
-	StringCbCopy(path, MAX_PATH, ring3_path_);
-	StringCbCat(path, MAX_PATH, L"\\*.*");
-
-	HANDLE h_file = FindFirstFile(path, &wfd);
-
-	if (h_file == INVALID_HANDLE_VALUE)
-		return false;
-	std::shared_ptr<void> file_closer(h_file, CloseHandle);
-
-	do
-	{
-		wchar_t *end = nullptr;
-		unsigned long long base_address = wcstoll(wfd.cFileName, &end, 16);
-		size_t region_size = (wfd.nFileSizeHigh * ((unsigned)0x100000000) + wfd.nFileSizeLow);
-		unsigned long long end_address = base_address + region_size;
-
-		if (base_address <= value && value < end_address)
-		{
-			if (file_name && size)
-			{
-				*size = region_size;
-				StringCbCopy(file_name, MAX_PATH, wfd.cFileName);
-				return true;
-			}
-		}
-	} while (FindNextFile(h_file, &wfd));
-
-	return false;
-}
-
-bool __stdcall emulation_debugger::clear_ring3()
-{
-	WIN32_FIND_DATA wfd;
-	wchar_t path[MAX_PATH] = { 0, };
-	unsigned int fail_count = 0;
-
-	StringCbCopy(path, MAX_PATH, ring3_path_);
-	StringCbCat(path, MAX_PATH, L"\\*.*");
-
-	HANDLE h_file = FindFirstFile(path, &wfd);
-
-	if (h_file == INVALID_HANDLE_VALUE)
-		return false;
-	std::shared_ptr<void> file_closer(h_file, CloseHandle);
-
-	do
-	{
-		if (!wcsstr(wfd.cFileName, L".") && !wcsstr(wfd.cFileName, L".."))
-		{
-			wchar_t target[MAX_PATH];
-
-			StringCbCopy(target, MAX_PATH, ring3_path_);
-			StringCbCat(target, MAX_PATH, L"\\");
-			StringCbCat(target, MAX_PATH, wfd.cFileName);
-
-			if (!DeleteFile(target))
-			{
-				dprintf("%ls, %08x\n", target, GetLastError());
-				++fail_count;
-			}
-		}
-	} while (FindNextFile(h_file, &wfd));
-
-	if (fail_count > 3)
-		return false;
-
-	return true;
-}
-
-unsigned char * __stdcall emulation_debugger::load_page(unsigned long long value, unsigned long long *base, size_t *size)
-{
-	wchar_t *end = nullptr;
-	wchar_t name[MAX_PATH];
-	size_t region_size = 0;
-	wmemset(name, 0, MAX_PATH);
-
-	if (!file_query_ring3(value, name, &region_size))
-		return nullptr;
-
-	unsigned char *dump = (unsigned char *)malloc(region_size);
-
-	if (!dump)
-		return nullptr;
-
-	memset(dump, 0, region_size);
-
-	if (!windbg_linker_.read_binary(ring3_path_, name, dump, region_size))
-		return nullptr;
-
-	*base = wcstoull(name, &end, 16);
-	*size = region_size;
-
-	return dump;
-}
-
-bool __stdcall emulation_debugger::backup(void *engine)
-{
-	uc_engine *uc = (uc_engine *)engine;
-	uc_mem_region *um = nullptr;
-	uint32_t count = 0;
-
-	if (uc_mem_regions(uc, &um, &count) != 0)
-		return false;
-	std::shared_ptr<void> uc_memory_closer(um, free);
-
-	for (unsigned int i = 0; i < count; ++i)
-	{
-		size_t size = um[i].end - um[i].begin + 1;
-		unsigned char *dump = (unsigned char *)malloc(size);
-
-		if (!dump)
-			return false;
-
-		memset(dump, 0, size);
-		std::shared_ptr<void> dump_closer(dump, free);
-
-		if (uc_mem_read(uc, um[i].begin, dump, size) != 0)
-			return false;
-
-		wchar_t name[MAX_PATH];
-		wmemset(name, 0, MAX_PATH);
-		if (!_ui64tow(um[i].begin, name, 16))
-			return false;
-
-		if (!windbg_linker_.write_binary(ring3_path_, name, dump, size))
-			return false;
-	}
-
-	return true;
-}
-
-bool __stdcall emulation_debugger::backup()
-{
-	uc_engine *uc = (uc_engine *)engine_;
-	uc_mem_region *um = nullptr;
-	uint32_t count = 0;
-
-	if (uc_mem_regions(uc, &um, &count) != 0)
-		return false;
-	std::shared_ptr<void> uc_memory_closer(um, free);
-
-	for (unsigned int i = 0; i < count; ++i)
-	{
-		size_t size = um[i].end - um[i].begin + 1;
-		unsigned char *dump = (unsigned char *)malloc(size);
-
-		if (!dump)
-			return false;
-
-		memset(dump, 0, size);
-		std::shared_ptr<void> dump_closer(dump, free);
-
-		if (uc_mem_read(uc, um[i].begin, dump, size) != 0)
-			return false;
-
-		wchar_t name[MAX_PATH];
-		wmemset(name, 0, MAX_PATH);
-		if (!_ui64tow(um[i].begin, name, 16))
-			return false;
-
-		if (!windbg_linker_.write_binary(ring3_path_, name, dump, size))
-			return false;
-	}
-
-	return true;
-}
-
-bool __stdcall emulation_debugger::write_binary(unsigned long long address)
-{
-	MEMORY_BASIC_INFORMATION64 mbi;
-	if (!windbg_linker_.virtual_query(address, &mbi))
-		return false;
-
-	unsigned char *dump = (unsigned char *)malloc(mbi.RegionSize);
-	if (!dump)
-		return false;
-	std::shared_ptr<void> teb_dump_closer(dump, free);
-
-	if (!windbg_linker_.read_memory(mbi.BaseAddress, dump, mbi.RegionSize))
-		return false;
-
-	wchar_t name[MAX_PATH];
-	wmemset(name, 0, MAX_PATH);
-	if (!_ui64tow(mbi.BaseAddress, name, 16))
-		return false;
-	if (!windbg_linker_.write_binary(ring3_path_, name, dump, mbi.RegionSize))
-		return false;
-
-	return true;
-}
-//
-//
-//
-bool __stdcall emulation_debugger::read_page(unsigned long long address, unsigned char *dump, size_t *size)
-{
-	wchar_t *end = nullptr;
-	wchar_t name[MAX_PATH];
-	size_t region_size = 0;
-
-	wmemset(name, 0, MAX_PATH);
-	if (!file_query_ring3(address, name, &region_size))
-		return nullptr;
-
-	unsigned char *d = (unsigned char *)malloc(region_size);
-	if (!d)
-		return nullptr;
-	std::shared_ptr<void> dump_closer(d, free);
-	memset(d, 0, region_size);
-
-	if (!windbg_linker_.read_binary(ring3_path_, name, d, region_size))
-		return nullptr;
-
-	unsigned long long base = wcstoll(name, &end, 16);
-	unsigned long long offset = address - base;
-
-	if (region_size - offset < *size)
-		*size = region_size - offset;
-
-	memcpy(dump, &d[offset], *size);
-
-	return true;
-}
-//
-// public
-//
-size_t __stdcall emulation_debugger::alignment(size_t region_size, unsigned long image_aligin)
-{
-	unsigned long mod = region_size % image_aligin;
-	region_size -= mod;
-
-	return region_size + image_aligin;
-}
-
-bool __stdcall emulation_debugger::is_wow64cpu()
-{
-	unsigned long long teb_address = windbg_linker_.get_teb_address();
-	NT_TIB64 tib_64;
-
-	if (!windbg_linker_.read_memory(teb_address, &tib_64, sizeof(tib_64)))
-		return false;
-
-	if (teb_address == tib_64.Self)
-		return true;
-
-	return false;
-}
-
-CONTEXT __stdcall emulation_debugger::current_thread_context()
-{
-	return context_;
-}
-
-bool __stdcall emulation_debugger::is_64_cpu()
-{
-	return is_64_;
-}
-
-void __stdcall emulation_debugger::current_regs()
-{
-	log_print();
-}
-
-void * __stdcall emulation_debugger::get_windbg_linker()
-{
-	return &windbg_linker_;
 }
 
 void __stdcall emulation_debugger::log_print()
@@ -1141,67 +1321,4 @@ void __stdcall emulation_debugger::log_print()
 #else
 	print_code(context_.Eip, 3);
 #endif
-}
-
-void __stdcall emulation_debugger::clear_and_print()
-{
-#ifdef _WIN64
-	windbg_linker_.clear_screen();
-	print_code(context_.Rip, 10);
-
-	if (is_64_cpu())
-	{
-		dprintf("	rax="), print64(context_.Rax, backup_context_.Rax), dprintf(" ");
-		dprintf("rbx="), print64(context_.Rbx, backup_context_.Rbx), dprintf(" ");
-		dprintf("rcx="), print64(context_.Rcx, backup_context_.Rcx), dprintf("\n");
-
-		dprintf("	rdx="), print64(context_.Rdx, backup_context_.Rdx), dprintf(" ");
-		dprintf("rsi="), print64(context_.Rsi, backup_context_.Rsi), dprintf(" ");
-		dprintf("rdi="), print64(context_.Rdi, backup_context_.Rdi), dprintf("\n");
-
-		dprintf("	rip="), print64(context_.Rip, backup_context_.Rip), dprintf(" ");
-		dprintf("rsp="), print64(context_.Rsp, backup_context_.Rsp), dprintf(" ");
-		dprintf("rbp="), print64(context_.Rbp, backup_context_.Rbp), dprintf("\n");
-
-		dprintf("	r8="), print64(context_.R8, backup_context_.R8), dprintf(" ");
-		dprintf("r9="), print64(context_.R9, backup_context_.R9), dprintf(" ");
-		dprintf("r10="), print64(context_.R10, backup_context_.R10), dprintf("\n");
-
-		dprintf("	r11="), print64(context_.R11, backup_context_.R11), dprintf(" ");
-		dprintf("r12="), print64(context_.R12, backup_context_.R12), dprintf(" ");
-		dprintf("r13="), print64(context_.R13, backup_context_.R13), dprintf("\n");
-
-		dprintf("	r14="), print64(context_.R14, backup_context_.R14), dprintf(" ");
-		dprintf("r15="), print64(context_.R15, backup_context_.R15), dprintf(" ");
-		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
-	}
-	else
-	{
-		dprintf("	eax="), print32(context_.Rax, backup_context_.Rax), dprintf(" ");
-		dprintf("ebx="), print32(context_.Rbx, backup_context_.Rbx), dprintf(" ");
-		dprintf("ecx="), print32(context_.Rcx, backup_context_.Rcx), dprintf(" ");
-		dprintf("edx="), print32(context_.Rdx, backup_context_.Rdx), dprintf(" ");
-		dprintf("esi="), print32(context_.Rsi, backup_context_.Rsi), dprintf(" ");
-		dprintf("edi="), print32(context_.Rdi, backup_context_.Rdi), dprintf("\n");
-
-		dprintf("	eip="), print32(context_.Rip, backup_context_.Rip), dprintf(" ");
-		dprintf("esp="), print32(context_.Rsp, backup_context_.Rsp), dprintf(" ");
-		dprintf("ebp="), print32(context_.Rbp, backup_context_.Rbp), dprintf(" ");
-		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
-	}
-#endif
-}
-
-CONTEXT __stdcall emulation_debugger::get_current_thread_context()
-{
-	return context_;
-}
-
-void __stdcall emulation_debugger::close()
-{
-	uc_engine *uc = (uc_engine *)engine_;
-
-	backup(uc);
-	uc_close(uc);
-	engine_ = nullptr;
 }
