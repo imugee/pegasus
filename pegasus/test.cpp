@@ -78,7 +78,23 @@ EXT_CLASS_COMMAND(WindbgEngine, test, "", "{pid;ed,o;pid;;}")
 ///
 EXT_CLASS_COMMAND(WindbgEngine, test2, "", "{pid;ed,o;pid;;}")
 {
-	dprintf("test2!!\n");
+	std::shared_ptr<engine::linker> windbg_linker;
+	if (!engine::create<windbg_engine_linker>(windbg_linker))
+		return;
+
+	cpu_context_type context;
+	memset(&context, 0, sizeof(context));
+
+	if (!windbg_linker->get_thread_context(&context))
+		return;
+
+	dprintf("cax=%08x\n", context.rax);
+	dprintf("cbx=%08x\n", context.rbx);
+	dprintf("ccx=%08x\n", context.rcx);
+	dprintf("cdx=%08x\n", context.rdx);
+	dprintf("cip=%08x\n", context.rip);
+	dprintf("cbp=%08x\n", context.rbp);
+	dprintf("csp=%08x\n", context.rsp);
 }
 
 //EXTERN_C HRESULT CALLBACK test2(PDEBUG_CLIENT Client, PCSTR Args);

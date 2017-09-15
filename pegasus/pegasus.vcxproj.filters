@@ -86,6 +86,9 @@
     <ClInclude Include="..\include\distorm\src\x86defs.h">
       <Filter>distorm</Filter>
     </ClInclude>
+    <ClInclude Include="register_idx.h">
+      <Filter>engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="engine">

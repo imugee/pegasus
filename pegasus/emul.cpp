@@ -48,6 +48,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 
 			if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
 			{
+
 				unknown_dump = (unsigned char *)malloc(mbi.RegionSize);
 				if (unknown_dump && windbg_linker->read_memory(mbi.BaseAddress, unknown_dump, mbi.RegionSize))
 				{
@@ -172,10 +173,12 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{p;s;p;.}")
 
 	trace_item item;
 
-	if(HasArg("p"))
+	if (HasArg("p"))
 	{
 		StringCbCopyA(item.path, MAX_PATH, GetArgStr("p", FALSE));
 	}
+	else
+		memset(item.path, 0, sizeof(item.path));
 
 	if (!g_emulator->is_64_cpu())
 	{
@@ -201,8 +204,9 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{p;s;p;.}")
 		g_emulator->log_print();
 
 		g_Ext->DmlCmdExec("step into", "!trace");
-		dprintf(" ");
-		g_Ext->DmlCmdExec("step over\n", "!trace -so");
+		dprintf("   ");
+		//g_Ext->DmlCmdExec("step over\n", "!trace -so");
+		dprintf("\n");
 	}
 }
 
@@ -219,7 +223,7 @@ EXT_CLASS_COMMAND(EmulationEngine, detach, "; 0:000> !detach command detached th
 ///
 #define PEGASUS_STEP_MODE
 
-EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a single instruction.", "{bp;ed,o;bp;break point.}" "{so;b,o;so;step over.}")
+EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a single instruction.", "{bp;ed,o;bp;break point.}")
 {
 	if (!g_emulator)
 		return;
@@ -229,10 +233,6 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a si
 	unsigned long long step = GetArgU64("step", FALSE);
 	trace_item item;
 
-	if (HasArg("so"))
-		item.step_over = true;
-	else
-		item.step_over = false;
 	if (!g_emulator->is_64_cpu())
 	{
 		item.mode = UC_MODE_32;
@@ -271,16 +271,13 @@ EXT_CLASS_COMMAND(EmulationEngine, trace, "; 0:000> !trace command executes a si
 			else
 				break;
 		}
-#ifdef _WIN64
-	} while (bp && g_emulator->get_current_thread_context().Rip != bp);
-#else
-	} while (bp && g_emulator->get_current_thread_context().Eip != bp);
-#endif
+	} while (bp && g_emulator->get_current_thread_context().rip != bp);
 
 	g_emulator->log_print();
 	g_Ext->DmlCmdExec("step into", "!trace");
-	dprintf(" ");
-	g_Ext->DmlCmdExec("step over\n", "!trace -so");
+	dprintf("   ");
+	//g_Ext->DmlCmdExec("step over\n", "!trace -so");
+	dprintf("\n");
 }
 //
 //

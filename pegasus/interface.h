@@ -1,6 +1,10 @@
 #ifndef __DEFINE_PEGASUS_EXTERNAL_INTERFACE__
 #define __DEFINE_PEGASUS_EXTERNAL_INTERFACE__
 ///
+//
+///
+#include "register_idx.h"
+///
 // interface
 ///
 #define get_bit_flag(t, i)		(t >> i) & 1
@@ -66,7 +70,7 @@ namespace engine
 		virtual void __stdcall log_print() = 0;
 		virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin) = 0;
 		virtual void __stdcall current_regs() = 0;
-		virtual CONTEXT __stdcall get_current_thread_context() = 0;
+		virtual cpu_context_type __stdcall get_current_thread_context() = 0;
 
 		virtual bool __stdcall attach(void *mem) = 0;
 		virtual bool __stdcall switch_cpu(void *mem) = 0;
@@ -105,6 +109,7 @@ namespace engine
 		virtual bool __stdcall set_debuggee_process(unsigned long pid) = 0;
 		virtual bool __stdcall set_debuggee_thread(unsigned long tid) = 0;
 		virtual bool __stdcall get_context(void *context, size_t context_size) = 0;
+		virtual bool __stdcall get_thread_context(cpu_context_type *context) = 0;
 
 		virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...) = 0;
 		virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *dump, size_t size) = 0;

@@ -203,18 +203,18 @@ bool __stdcall emulation_debugger::create_global_descriptor_table_ex()
 	SegmentDescriptor global_descriptor[31];
 	memset(global_descriptor, 0, sizeof(global_descriptor));
 
-	if (context_.SegDs == context_.SegSs)
-		context_.SegSs = 0x88; // rpl = 0
+	if (context_.ds == context_.ss)
+		context_.ss = 0x88; // rpl = 0
 
-	context_.SegGs = 0x63;
+	context_.gs = 0x63;
 
 	set_global_descriptor(&global_descriptor[0x33 >> 3], 0, 0xfffff000, 1); // 64 code
-	set_global_descriptor(&global_descriptor[context_.SegCs >> 3], 0, 0xfffff000, 1);
-	set_global_descriptor(&global_descriptor[context_.SegDs >> 3], 0, 0xfffff000, 0);
-	set_global_descriptor(&global_descriptor[context_.SegFs >> 3], (unsigned long)teb_address_, 0xfff, 0);
-	set_global_descriptor(&global_descriptor[context_.SegGs >> 3], (unsigned long)teb_64_address_, 0xfffff000, 0);
-	set_global_descriptor(&global_descriptor[context_.SegSs >> 3], 0, 0xfffff000, 0);
-	global_descriptor[context_.SegSs >> 3].dpl = 0; // dpl = 0, cpl = 0
+	set_global_descriptor(&global_descriptor[context_.cs >> 3], 0, 0xfffff000, 1);
+	set_global_descriptor(&global_descriptor[context_.ds >> 3], 0, 0xfffff000, 0);
+	set_global_descriptor(&global_descriptor[context_.fs >> 3], (unsigned long)teb_address_, 0xfff, 0);
+	set_global_descriptor(&global_descriptor[context_.gs >> 3], (unsigned long)teb_64_address_, 0xfffff000, 0);
+	set_global_descriptor(&global_descriptor[context_.ss >> 3], 0, 0xfffff000, 0);
+	global_descriptor[context_.ss >> 3].dpl = 0; // dpl = 0, cpl = 0
 
 	gdt_base_ = 0xc0000000;
 	uc_x86_mmr gdtr;
@@ -258,34 +258,23 @@ bool __stdcall emulation_debugger::read_x86_cpu_context(void *engine)
 	if (uc_reg_read_batch(uc, x86_register, read_ptr, size) != 0)
 		return false;
 
-#ifdef _WIN64
-	context_.Rax = read_register[PR_RAX];
-	context_.Rbx = read_register[PR_RBX];
-	context_.Rcx = read_register[PR_RCX];
-	context_.Rdx = read_register[PR_RDX];
-	context_.Rsi = read_register[PR_RSI];
-	context_.Rdi = read_register[PR_RDI];
-	context_.Rsp = read_register[PR_RSP];
-	context_.Rbp = read_register[PR_RBP];
-	context_.Rip = read_register[PR_RIP];
-#else
-	context_.Eax = read_register[PR_RAX];
-	context_.Ebx = read_register[PR_RBX];
-	context_.Ecx = read_register[PR_RCX];
-	context_.Edx = read_register[PR_RDX];
-	context_.Esi = read_register[PR_RSI];
-	context_.Edi = read_register[PR_RDI];
-	context_.Esp = read_register[PR_RSP];
-	context_.Ebp = read_register[PR_RBP];
-	context_.Eip = read_register[PR_RIP];
-#endif
-	context_.EFlags = read_register[PR_EFLAGS];
-	context_.SegCs = (unsigned short)read_register[PR_REG_CS];
-	context_.SegDs = (unsigned short)read_register[PR_REG_DS];
-	context_.SegEs = (unsigned short)read_register[PR_REG_ES];
-	context_.SegFs = (unsigned short)read_register[PR_REG_FS];
-	context_.SegGs = (unsigned short)read_register[PR_REG_GS];
-	context_.SegSs = (unsigned short)read_register[PR_REG_SS];
+	context_.rax = read_register[PR_RAX];
+	context_.rbx = read_register[PR_RBX];
+	context_.rcx = read_register[PR_RCX];
+	context_.rdx = read_register[PR_RDX];
+	context_.rsi = read_register[PR_RSI];
+	context_.rdi = read_register[PR_RDI];
+	context_.rsp = read_register[PR_RSP];
+	context_.rbp = read_register[PR_RBP];
+	context_.rip = read_register[PR_RIP];
+
+	context_.efl = read_register[PR_EFLAGS];
+	context_.cs = (unsigned short)read_register[PR_REG_CS];
+	context_.ds = (unsigned short)read_register[PR_REG_DS];
+	context_.es = (unsigned short)read_register[PR_REG_ES];
+	context_.fs = (unsigned short)read_register[PR_REG_FS];
+	context_.gs = (unsigned short)read_register[PR_REG_GS];
+	context_.ss = (unsigned short)read_register[PR_REG_SS];
 
 	return true;
 }
@@ -312,34 +301,23 @@ bool __stdcall emulation_debugger::write_x86_cpu_context(void *engine)
 	for (int i = 0; i < size; ++i)
 		write_ptr[i] = &write_register[i];
 
-#ifdef _WIN64
-	write_register[PR_RAX] = (unsigned long)context_.Rax;
-	write_register[PR_RBX] = (unsigned long)context_.Rbx;
-	write_register[PR_RCX] = (unsigned long)context_.Rcx;
-	write_register[PR_RDX] = (unsigned long)context_.Rdx;
-	write_register[PR_RSI] = (unsigned long)context_.Rsi;
-	write_register[PR_RDI] = (unsigned long)context_.Rdi;
-	write_register[PR_RSP] = (unsigned long)context_.Rsp;
-	write_register[PR_RBP] = (unsigned long)context_.Rbp;
-	write_register[PR_RIP] = (unsigned long)context_.Rip;
-#else
-	write_register[PR_RAX] = (unsigned long)context_.Eax;
-	write_register[PR_RBX] = (unsigned long)context_.Ebx;
-	write_register[PR_RCX] = (unsigned long)context_.Ecx;
-	write_register[PR_RDX] = (unsigned long)context_.Edx;
-	write_register[PR_RSI] = (unsigned long)context_.Esi;
-	write_register[PR_RDI] = (unsigned long)context_.Edi;
-	write_register[PR_RSP] = (unsigned long)context_.Esp;
-	write_register[PR_RBP] = (unsigned long)context_.Ebp;
-	write_register[PR_RIP] = (unsigned long)context_.Eip;
-#endif
-	write_register[PR_EFLAGS] = (unsigned long)context_.EFlags;
-	write_register[PR_REG_CS] = context_.SegCs;
-	write_register[PR_REG_DS] = context_.SegDs;
-	write_register[PR_REG_ES] = context_.SegEs;
-	write_register[PR_REG_FS] = context_.SegFs;
-	write_register[PR_REG_GS] = context_.SegGs;
-	write_register[PR_REG_SS] = context_.SegSs;
+	write_register[PR_RAX] = (unsigned long)context_.rax;
+	write_register[PR_RBX] = (unsigned long)context_.rbx;
+	write_register[PR_RCX] = (unsigned long)context_.rcx;
+	write_register[PR_RDX] = (unsigned long)context_.rdx;
+	write_register[PR_RSI] = (unsigned long)context_.rsi;
+	write_register[PR_RDI] = (unsigned long)context_.rdi;
+	write_register[PR_RSP] = (unsigned long)context_.rsp;
+	write_register[PR_RBP] = (unsigned long)context_.rbp;
+	write_register[PR_RIP] = (unsigned long)context_.rip;
+	write_register[PR_EFLAGS] = (unsigned long)context_.efl;
+	write_register[PR_REG_CS] = context_.cs;
+	write_register[PR_REG_DS] = context_.ds;
+	write_register[PR_REG_ES] = context_.es;
+	write_register[PR_REG_FS] = context_.fs;
+	write_register[PR_REG_GS] = context_.gs;
+	write_register[PR_REG_SS] = context_.ss;
+
 
 	uc_engine *uc = (uc_engine *)engine;
 	if (uc_reg_write_batch(uc, x86_register, write_ptr, size) != 0)
@@ -375,30 +353,30 @@ bool __stdcall emulation_debugger::read_x64_cpu_context(void *engine)
 	if (uc_reg_read_batch(uc, x86_register, read_ptr, size) != 0)
 		return false;
 
-	context_.Rax = read_register[PR_RAX];
-	context_.Rbx = read_register[PR_RBX];
-	context_.Rcx = read_register[PR_RCX];
-	context_.Rdx = read_register[PR_RDX];
-	context_.Rsi = read_register[PR_RSI];
-	context_.Rdi = read_register[PR_RDI];
-	context_.Rsp = read_register[PR_RSP];
-	context_.Rbp = read_register[PR_RBP];
-	context_.Rip = read_register[PR_RIP];
-	context_.R8 = read_register[PR_R8];
-	context_.R9 = read_register[PR_R9];
-	context_.R10 = read_register[PR_R10];
-	context_.R11 = read_register[PR_R11];
-	context_.R12 = read_register[PR_R12];
-	context_.R13 = read_register[PR_R13];
-	context_.R14 = read_register[PR_R14];
-	context_.R15 = read_register[PR_R15];
-	context_.EFlags = (unsigned long)read_register[PR_EFLAGS];
-	context_.SegCs = (unsigned short)read_register[PR_REG_CS];
-	context_.SegDs = (unsigned short)read_register[PR_REG_DS];
-	context_.SegEs = (unsigned short)read_register[PR_REG_ES];
-	context_.SegFs = (unsigned short)read_register[PR_REG_FS];
-	context_.SegGs = (unsigned short)read_register[PR_REG_GS];
-	context_.SegSs = (unsigned short)read_register[PR_REG_SS];
+	context_.rax = read_register[PR_RAX];
+	context_.rbx = read_register[PR_RBX];
+	context_.rcx = read_register[PR_RCX];
+	context_.rdx = read_register[PR_RDX];
+	context_.rsi = read_register[PR_RSI];
+	context_.rdi = read_register[PR_RDI];
+	context_.rsp = read_register[PR_RSP];
+	context_.rbp = read_register[PR_RBP];
+	context_.rip = read_register[PR_RIP];
+	context_.r8 = read_register[PR_R8];
+	context_.r9 = read_register[PR_R9];
+	context_.r10 = read_register[PR_R10];
+	context_.r11 = read_register[PR_R11];
+	context_.r12 = read_register[PR_R12];
+	context_.r13 = read_register[PR_R13];
+	context_.r14 = read_register[PR_R14];
+	context_.r15 = read_register[PR_R15];
+	context_.efl = (unsigned long)read_register[PR_EFLAGS];
+	context_.cs = (unsigned short)read_register[PR_REG_CS];
+	context_.ds = (unsigned short)read_register[PR_REG_DS];
+	context_.es = (unsigned short)read_register[PR_REG_ES];
+	context_.fs = (unsigned short)read_register[PR_REG_FS];
+	context_.gs = (unsigned short)read_register[PR_REG_GS];
+	context_.ss = (unsigned short)read_register[PR_REG_SS];
 #endif
 	return true;
 }
@@ -426,29 +404,29 @@ bool __stdcall emulation_debugger::write_x64_cpu_context(void *engine)
 	for (int i = 0; i < size; ++i)
 		write_ptr[i] = &write_register[i];
 
-	write_register[PR_RAX] = context_.Rax;
-	write_register[PR_RBX] = context_.Rbx;
-	write_register[PR_RCX] = context_.Rcx;
-	write_register[PR_RDX] = context_.Rdx;
-	write_register[PR_RSI] = context_.Rsi;
-	write_register[PR_RDI] = context_.Rdi;
-	write_register[PR_RSP] = context_.Rsp;
-	write_register[PR_RBP] = context_.Rbp;
-	write_register[PR_R8] = context_.R8;
-	write_register[PR_R9] = context_.R9;
-	write_register[PR_R10] = context_.R10;
-	write_register[PR_R11] = context_.R11;
-	write_register[PR_R12] = context_.R12;
-	write_register[PR_R13] = context_.R13;
-	write_register[PR_R14] = context_.R14;
-	write_register[PR_R15] = context_.R15;
-	write_register[PR_EFLAGS] = (unsigned long)context_.EFlags;
-	write_register[PR_REG_CS] = context_.SegCs;
-	write_register[PR_REG_DS] = context_.SegDs;
-	write_register[PR_REG_ES] = context_.SegEs;
-	write_register[PR_REG_FS] = context_.SegFs;
-	write_register[PR_REG_GS] = context_.SegGs;
-	write_register[PR_REG_SS] = context_.SegSs;
+	write_register[PR_RAX] = context_.rax;
+	write_register[PR_RBX] = context_.rbx;
+	write_register[PR_RCX] = context_.rcx;
+	write_register[PR_RDX] = context_.rdx;
+	write_register[PR_RSI] = context_.rsi;
+	write_register[PR_RDI] = context_.rdi;
+	write_register[PR_RSP] = context_.rsp;
+	write_register[PR_RBP] = context_.rbp;
+	write_register[PR_R8] = context_.r8;
+	write_register[PR_R9] = context_.r9;
+	write_register[PR_R10] = context_.r10;
+	write_register[PR_R11] = context_.r11;
+	write_register[PR_R12] = context_.r12;
+	write_register[PR_R13] = context_.r13;
+	write_register[PR_R14] = context_.r14;
+	write_register[PR_R15] = context_.r15;
+	write_register[PR_EFLAGS] = (unsigned long)context_.efl;
+	write_register[PR_REG_CS] = context_.cs;
+	write_register[PR_REG_DS] = context_.ds;
+	write_register[PR_REG_ES] = context_.es;
+	write_register[PR_REG_FS] = context_.fs;
+	write_register[PR_REG_GS] = context_.gs;
+	write_register[PR_REG_SS] = context_.ss;
 
 	uc_engine *uc = (uc_engine *)engine;
 	if (uc_reg_write_batch(uc, x86_register, write_ptr, size) != 0)
@@ -516,13 +494,9 @@ bool __stdcall emulation_debugger::mnemonic_mov_gs(void *engine, unsigned long l
 	unsigned int distorm_to_uc[] = { DISTORM_TO_UC_REGS };
 	if (uc_reg_write(uc, distorm_to_uc[di.ops[0].index], &teb_64_address_) != 0)
 		return false;
-#ifdef _WIN64
-	context_.Rip = ip + di.size;
-	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.Rip) != 0)
-#else
-	context_.Eip = ip + di.size;
-	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.Eip) != 0)
-#endif
+
+	context_.rip = ip + di.size;
+	if (uc_reg_write(uc, UC_X86_REG_RIP, &context_.rip) != 0)
 		return false;
 
 	return true;
@@ -557,11 +531,8 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 	BYTE dump[1024];
 	_DInst di;
 	uc_engine *uc = (uc_engine *)engine;
-#ifdef _WIN64
-	if (uc_mem_read(uc, context_.Rip, dump, 1024) != 0)
-#else
-	if (uc_mem_read(uc, context_.Eip, dump, 1024) != 0)
-#endif
+
+	if (uc_mem_read(uc, context_.rip, dump, 1024) != 0)
 		return false;
 
 	if (!disasm((PVOID)dump, 64, Decode64Bits, &di))
@@ -579,11 +550,8 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 	unsigned long value = 0;
 	if (uc_mem_read(uc, return_register, &value, sizeof(value)) != 0)
 		return false;
-#ifdef _WIN64
-	context_.Rip = value;
-#else
-	context_.Eip = value;
-#endif
+
+	context_.rip = value;
 	is_64_ = false;
 
 	return true;
@@ -594,21 +562,14 @@ bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 	uc_engine *uc = (uc_engine *)engine;
 	unsigned char dump[16] = { 0, };
 
-#ifdef _WIN64
-	if ((uc_mem_read(uc, context_.Rip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
-#else
-	if ((uc_mem_read(uc, context_.Eip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
-#endif
+	if ((uc_mem_read(uc, context_.rip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
 	{
 		unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
 		unsigned long syscall = *syscall_ptr;
 
 		is_64_ = true;
-#ifdef _WIN64
-		context_.Rip = syscall;
-#else
-		context_.Eip = syscall;
-#endif
+		context_.rip = syscall;
+
 		return true;
 	}
 
@@ -861,19 +822,12 @@ bool __stdcall emulation_debugger::reboot(void *mem)
 	if (!load_context(item))
 		return false;
 
-#ifdef _WIN64
-	if (!load_page(context_.Rip))
+	if (!load_page(context_.rip))
 		return false;
 
-	if (!load_page(context_.Rsp))
-		return false;
-#else
-	if (!load_page(context_.Eip))
+	if (!load_page(context_.rsp))
 		return false;
 
-	if (!load_page(context_.Esp))
-		return false;
-#endif
 	if (is_32)
 		g_Ext->ExecuteSilent("!wow64exts.sw");
 
@@ -884,19 +838,6 @@ bool __stdcall emulation_debugger::reboot(void *mem)
 //
 bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, load_gdt에서 실패하게 된다.
 {
-	bool is_32 = false;
-
-	if (is_wow64cpu() && g_Ext->IsCurMachine64())
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-
-	if (g_Ext->IsCurMachine32())
-	{
-		is_32 = true;
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-	}
-	else
-		is_64_ = true;
-
 	uc_hook code_hook;
 	uc_hook write_unmap_hook;
 	uc_hook read_unmap_hook;
@@ -917,21 +858,28 @@ bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, l
 		return false;
 
 	if (!load((void *)teb_address_))
-		return false;
-
-	if (!load((void *)peb_address_))
-		return false;
-
-	if (teb_64_address_ || peb_64_address_)
 	{
 		if (!load((void *)teb_64_address_))
 			return false;
+	}
 
+	if (!load((void *)peb_address_))
+	{
 		if (!load((void *)peb_64_address_))
 			return false;
 	}
 
-	if (!windbg_linker_.get_context(&context_, sizeof(context_)))
+	//if (teb_64_address_ || peb_64_address_)
+	//{
+	//	if (!load((void *)teb_64_address_))
+	//		return false;
+
+	//	if (!load((void *)peb_64_address_))
+	//		return false;
+	//}
+
+	memset(&context_, 0, sizeof(context_));
+	if (!windbg_linker_.get_thread_context(&context_))
 		return false;
 
 	if (!create_global_descriptor_table_ex())
@@ -940,24 +888,19 @@ bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, l
 	if (!load_context(uc, item->mode))
 		return false;
 
-#ifdef _WIN64
-	if (!load((void *)context_.Rip))
+	if (!load((void *)context_.rip))
 		return false;
 
-	if (!load((void *)context_.Rsp))
-		return false;
-#else
-	if (!load((void *)context_.Eip))
+	if (!load((void *)context_.rsp))
 		return false;
 
-	if (!load((void *)context_.Esp))
-		return false;
-#endif
-	if (!setting(item->path))
-		return false;
-
-	if (is_32)
-		g_Ext->ExecuteSilent("!wow64exts.sw");
+	if (strlen(item->path) != 0)
+	{
+		if (!setting(item->path))
+			return false;
+	}
+	else
+		memset(storage_path_, 0, sizeof(storage_path_));
 
 	return true;
 }
@@ -968,29 +911,19 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 	uc_engine *uc = (uc_engine *)engine;
 	BYTE dump[1024];
 	_DInst di;
-#ifdef _WIN64
-	unsigned long long end_point = context_.Rip + 0x1000;
-#else
-	unsigned long long end_point = context_.Eip + 0x1000;
-#endif
+
+	unsigned long long end_point = context_.rip + 0x1000;
 	unsigned long step = 1;
 
-#ifdef _WIN64
-	if (windbg_linker_.read_memory(context_.Rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
-#else
-	if (windbg_linker_.read_memory(context_.Eip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
-#endif
+	if (windbg_linker_.read_memory(context_.rip, dump, 1024) && disasm((PVOID)dump, 64, Decode64Bits, &di))
 	{
 		if (item.break_point)
 		{
 			end_point = item.break_point;
 			step = 0;
 		}
-#ifdef _WIN64
-		err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-#else
-		err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
-#endif
+
+		err = uc_emu_start(uc, context_.rip, end_point, 0, step);
 		if (err)
 		{
 			if (err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED)
@@ -999,11 +932,7 @@ bool __stdcall emulation_debugger::trace(void *engine, trace_item item)
 
 				do
 				{
-#ifdef _WIN64
-					err = uc_emu_start(uc, context_.Rip, end_point, 0, step);
-#else
-					err = uc_emu_start(uc, context_.Eip, end_point, 0, step);
-#endif
+					err = uc_emu_start(uc, context_.rip, end_point, 0, step);
 					++restart_count;
 				} while ((err == UC_ERR_WRITE_UNMAPPED || err == UC_ERR_READ_UNMAPPED || err == UC_ERR_FETCH_UNMAPPED) && restart_count < 3);
 			}
@@ -1178,7 +1107,7 @@ void * __stdcall emulation_debugger::get_windbg_linker()
 	return &windbg_linker_;
 }
 
-CONTEXT __stdcall emulation_debugger::get_current_thread_context()
+cpu_context_type __stdcall emulation_debugger::get_current_thread_context()
 {
 	return context_;
 }
@@ -1187,11 +1116,8 @@ CONTEXT __stdcall emulation_debugger::get_current_thread_context()
 //
 void __stdcall emulation_debugger::print_code(unsigned long long ip, unsigned long line)
 {
-#ifdef _WIN64
 	unsigned long long index = ip;
-#else
-	unsigned long index = context_.Eip;
-#endif
+
 	_DInst di;
 	unsigned char dump[32] = { 0, };
 
@@ -1262,63 +1188,45 @@ void __stdcall emulation_debugger::log_print()
 	if (is_64_cpu())
 	{
 #ifdef _WIN64
-		dprintf("	rax="), print64(context_.Rax, backup_context_.Rax), dprintf(" ");
-		dprintf("rbx="), print64(context_.Rbx, backup_context_.Rbx), dprintf(" ");
-		dprintf("rcx="), print64(context_.Rcx, backup_context_.Rcx), dprintf("\n");
+		dprintf("	rax="), print64(context_.rax, backup_context_.rax), dprintf(" ");
+		dprintf("rbx="), print64(context_.rbx, backup_context_.rbx), dprintf(" ");
+		dprintf("rcx="), print64(context_.rcx, backup_context_.rcx), dprintf("\n");
 
-		dprintf("	rdx="), print64(context_.Rdx, backup_context_.Rdx), dprintf(" ");
-		dprintf("rsi="), print64(context_.Rsi, backup_context_.Rsi), dprintf(" ");
-		dprintf("rdi="), print64(context_.Rdi, backup_context_.Rdi), dprintf("\n");
+		dprintf("	rdx="), print64(context_.rdx, backup_context_.rdx), dprintf(" ");
+		dprintf("rsi="), print64(context_.rsi, backup_context_.rsi), dprintf(" ");
+		dprintf("rdi="), print64(context_.rdi, backup_context_.rdi), dprintf("\n");
 
-		dprintf("	rip="), print64(context_.Rip, backup_context_.Rip), dprintf(" ");
-		dprintf("rsp="), print64(context_.Rsp, backup_context_.Rsp), dprintf(" ");
-		dprintf("rbp="), print64(context_.Rbp, backup_context_.Rbp), dprintf("\n");
+		dprintf("	rip="), print64(context_.rip, backup_context_.rip), dprintf(" ");
+		dprintf("rsp="), print64(context_.rsp, backup_context_.rsp), dprintf(" ");
+		dprintf("rbp="), print64(context_.rbp, backup_context_.rbp), dprintf("\n");
 
-		dprintf("	r8="), print64(context_.R8, backup_context_.R8), dprintf(" ");
-		dprintf("r9="), print64(context_.R9, backup_context_.R9), dprintf(" ");
-		dprintf("r10="), print64(context_.R10, backup_context_.R10), dprintf("\n");
+		dprintf("	r8="), print64(context_.r8, backup_context_.r8), dprintf(" ");
+		dprintf("r9="), print64(context_.r9, backup_context_.r9), dprintf(" ");
+		dprintf("r10="), print64(context_.r10, backup_context_.r10), dprintf("\n");
 
-		dprintf("	r11="), print64(context_.R11, backup_context_.R11), dprintf(" ");
-		dprintf("r12="), print64(context_.R12, backup_context_.R12), dprintf(" ");
-		dprintf("r13="), print64(context_.R13, backup_context_.R13), dprintf("\n");
+		dprintf("	r11="), print64(context_.r11, backup_context_.r11), dprintf(" ");
+		dprintf("r12="), print64(context_.r12, backup_context_.r12), dprintf(" ");
+		dprintf("r13="), print64(context_.r13, backup_context_.r13), dprintf("\n");
 
-		dprintf("	r14="), print64(context_.R14, backup_context_.R14), dprintf(" ");
-		dprintf("r15="), print64(context_.R15, backup_context_.R15), dprintf(" ");
-		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
+		dprintf("	r14="), print64(context_.r14, backup_context_.r14), dprintf(" ");
+		dprintf("r15="), print64(context_.r15, backup_context_.r15), dprintf(" ");
+		dprintf("efl="), print32(context_.efl, backup_context_.efl), dprintf("\n");
 #endif
 	}
 	else
 	{
-#ifdef _WIN64
-		dprintf("	eax="), print32(context_.Rax, backup_context_.Rax), dprintf(" ");
-		dprintf("ebx="), print32(context_.Rbx, backup_context_.Rbx), dprintf(" ");
-		dprintf("ecx="), print32(context_.Rcx, backup_context_.Rcx), dprintf(" ");
-		dprintf("edx="), print32(context_.Rdx, backup_context_.Rdx), dprintf(" ");
-		dprintf("esi="), print32(context_.Rsi, backup_context_.Rsi), dprintf(" ");
-		dprintf("edi="), print32(context_.Rdi, backup_context_.Rdi), dprintf("\n");
+		dprintf("	eax="), print32(context_.rax, backup_context_.rax), dprintf(" ");
+		dprintf("ebx="), print32(context_.rbx, backup_context_.rbx), dprintf(" ");
+		dprintf("ecx="), print32(context_.rcx, backup_context_.rcx), dprintf(" ");
+		dprintf("edx="), print32(context_.rdx, backup_context_.rdx), dprintf(" ");
+		dprintf("esi="), print32(context_.rsi, backup_context_.rsi), dprintf(" ");
+		dprintf("edi="), print32(context_.rdi, backup_context_.rdi), dprintf("\n");
 
-		dprintf("	eip="), print32(context_.Rip, backup_context_.Rip), dprintf(" ");
-		dprintf("esp="), print32(context_.Rsp, backup_context_.Rsp), dprintf(" ");
-		dprintf("ebp="), print32(context_.Rbp, backup_context_.Rbp), dprintf(" ");
-		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
-#else
-		dprintf("	eax="), print32(context_.Eax, backup_context_.Eax), dprintf(" ");
-		dprintf("ebx="), print32(context_.Ebx, backup_context_.Ebx), dprintf(" ");
-		dprintf("ecx="), print32(context_.Ecx, backup_context_.Ecx), dprintf(" ");
-		dprintf("edx="), print32(context_.Edx, backup_context_.Edx), dprintf(" ");
-		dprintf("esi="), print32(context_.Esi, backup_context_.Esi), dprintf(" ");
-		dprintf("edi="), print32(context_.Edi, backup_context_.Edi), dprintf("\n");
-
-		dprintf("	eip="), print32(context_.Eip, backup_context_.Eip), dprintf(" ");
-		dprintf("esp="), print32(context_.Esp, backup_context_.Esp), dprintf(" ");
-		dprintf("ebp="), print32(context_.Ebp, backup_context_.Ebp), dprintf(" ");
-		dprintf("efl="), print32(context_.EFlags, backup_context_.EFlags), dprintf("\n");
-#endif
+		dprintf("	eip="), print32(context_.rip, backup_context_.rip), dprintf(" ");
+		dprintf("esp="), print32(context_.rsp, backup_context_.rsp), dprintf(" ");
+		dprintf("ebp="), print32(context_.rbp, backup_context_.rbp), dprintf(" ");
+		dprintf("efl="), print32(context_.efl, backup_context_.efl), dprintf("\n");
 	}
 
-#ifdef _WIN64
-	print_code(context_.Rip, 3);
-#else
-	print_code(context_.Eip, 3);
-#endif
+	print_code(context_.rip, 5);
 }

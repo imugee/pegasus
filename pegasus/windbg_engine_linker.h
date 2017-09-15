@@ -5,7 +5,9 @@ typedef enum
 {
 	VAD_MM_ZERO_ACCESS, VAD_MM_READONLY, VAD_MM_EXECUTE, VAD_MM_EXECUTE_READ, VAD_MM_READWRITE, VAD_MM_WRITECOPY, VAD_MM_EXECUTE_READWRITE, VAD_MM_EXECUTE_WRITECOPY
 }VAD_PROTECTION;
-
+//
+//
+//
 #define MAX_ARGUMENT_LENGTH		1024
 
 class windbg_thread
@@ -82,6 +84,7 @@ public:
 	virtual bool __stdcall set_debuggee_process(unsigned long pid);
 	virtual bool __stdcall set_debuggee_thread(unsigned long tid);
 	virtual bool __stdcall get_context(void *context, size_t context_size);
+	virtual bool __stdcall get_thread_context(cpu_context_type *context);
 
 	virtual bool __stdcall write_file_log(wchar_t *log_dir, wchar_t *log_file_name, wchar_t *format, ...);
 	virtual bool __stdcall write_binary(wchar_t *bin_dir, wchar_t *bin_file_name, unsigned char *address, size_t size);

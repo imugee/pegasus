@@ -31,8 +31,8 @@ private:
 	std::list<MEMORY_BASIC_INFORMATION64> memory_list_;
 	void *engine_;
 
-	CONTEXT context_;
-	CONTEXT backup_context_;
+	cpu_context_type context_;
+	cpu_context_type backup_context_;
 	unsigned long long teb_address_;
 	unsigned long long teb_64_address_;
 	unsigned long long peb_address_;
@@ -54,6 +54,7 @@ private:
 	virtual void __stdcall set_global_descriptor(SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code);
 
 	virtual bool __stdcall load_context(void *engine, unsigned long mode);
+
 	virtual bool __stdcall write_x86_cpu_context(void *engine);
 	virtual bool __stdcall read_x86_cpu_context(void *engine);
 	virtual bool __stdcall write_x64_cpu_context(void *engine);
@@ -86,7 +87,7 @@ public:
 	virtual void __stdcall log_print();
 	virtual size_t __stdcall alignment(size_t region_size, unsigned long image_aligin);
 	virtual void __stdcall current_regs();
-	virtual CONTEXT __stdcall get_current_thread_context();
+	virtual cpu_context_type __stdcall get_current_thread_context();
 
 	virtual bool __stdcall attach(void *mem);
 	virtual bool __stdcall switch_cpu(void *mem);

@@ -188,6 +188,7 @@
     <ClInclude Include="engextcpp.hpp" />
     <ClInclude Include="engine.h" />
     <ClInclude Include="interface.h" />
+    <ClInclude Include="register_idx.h" />
     <ClInclude Include="windbg_engine_linker.h" />
   </ItemGroup>
   <ItemGroup>
