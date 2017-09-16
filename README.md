@@ -1,6 +1,5 @@
-pegasus
+pegasus - Windbg extension DLL for emulation
 -------
-* Windbg extension DLL for emulation
 * ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 * ![Support](https://img.shields.io/badge/support-live-brightgreen.svg) ![Support](https://img.shields.io/badge/support-dump-brightgreen.svg)
 
