@@ -4,13 +4,13 @@
     <ClCompile Include="emul.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="engextcpp.cpp">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="engine.cpp">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="windbg_engine_linker.cpp">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="emulator.cpp">
       <Filter>emulator</Filter>
@@ -45,16 +45,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engextcpp.hpp">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="engine.h">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="interface.h">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="windbg_engine_linker.h">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="emulator.h">
       <Filter>emulator</Filter>
@@ -87,18 +87,18 @@
       <Filter>distorm</Filter>
     </ClInclude>
     <ClInclude Include="register_idx.h">
-      <Filter>engine</Filter>
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="engine">
-      <UniqueIdentifier>{df5bab01-c991-4724-bfee-614ed4048c70}</UniqueIdentifier>
-    </Filter>
     <Filter Include="emulator">
       <UniqueIdentifier>{da084986-67c3-4cda-a74e-c078f627e78f}</UniqueIdentifier>
     </Filter>
     <Filter Include="distorm">
       <UniqueIdentifier>{b9ca8c82-12ee-44c7-8843-30919a9db426}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{df5bab01-c991-4724-bfee-614ed4048c70}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,9 @@
+LIBRARY DBGSUIT
+
+EXPORTS
+	; ExtCpp framework.
+	DebugExtensionInitialize
+	DebugExtensionUninitialize
+	DebugExtensionNotify
+
+	suspend
