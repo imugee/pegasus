@@ -268,6 +268,24 @@ bool __stdcall emulation_debugger::read_x86_cpu_context(void *engine)
 	context_.rbp = read_register[PR_RBP];
 	context_.rip = read_register[PR_RIP];
 
+	context_.xmm0 = read_register[PR_XMM0];
+	context_.xmm1 = read_register[PR_XMM1];
+	context_.xmm2 = read_register[PR_XMM2];
+	context_.xmm3 = read_register[PR_XMM3];
+	context_.xmm4 = read_register[PR_XMM4];
+	context_.xmm5 = read_register[PR_XMM5];
+	context_.xmm6 = read_register[PR_XMM6];
+	context_.xmm7 = read_register[PR_XMM7];
+
+	context_.ymm0 = read_register[PR_YMM0];
+	context_.ymm1 = read_register[PR_YMM1];
+	context_.ymm2 = read_register[PR_YMM2];
+	context_.ymm3 = read_register[PR_YMM3];
+	context_.ymm4 = read_register[PR_YMM4];
+	context_.ymm5 = read_register[PR_YMM5];
+	context_.ymm6 = read_register[PR_YMM6];
+	context_.ymm7 = read_register[PR_YMM7];
+
 	context_.efl = read_register[PR_EFLAGS];
 	context_.cs = (unsigned short)read_register[PR_REG_CS];
 	context_.ds = (unsigned short)read_register[PR_REG_DS];
@@ -311,13 +329,31 @@ bool __stdcall emulation_debugger::write_x86_cpu_context(void *engine)
 	write_register[PR_RBP] = (unsigned long)context_.rbp;
 	write_register[PR_RIP] = (unsigned long)context_.rip;
 	write_register[PR_EFLAGS] = (unsigned long)context_.efl;
+
+	write_register[PR_XMM0] = (unsigned long)context_.xmm0;
+	write_register[PR_XMM1] = (unsigned long)context_.xmm1;
+	write_register[PR_XMM2] = (unsigned long)context_.xmm2;
+	write_register[PR_XMM3] = (unsigned long)context_.xmm3;
+	write_register[PR_XMM4] = (unsigned long)context_.xmm4;
+	write_register[PR_XMM5] = (unsigned long)context_.xmm5;
+	write_register[PR_XMM6] = (unsigned long)context_.xmm6;
+	write_register[PR_XMM7] = (unsigned long)context_.xmm7;
+
+	write_register[PR_YMM0] = (unsigned long)context_.ymm0;
+	write_register[PR_YMM1] = (unsigned long)context_.ymm1;
+	write_register[PR_YMM2] = (unsigned long)context_.ymm2;
+	write_register[PR_YMM3] = (unsigned long)context_.ymm3;
+	write_register[PR_YMM4] = (unsigned long)context_.ymm4;
+	write_register[PR_YMM5] = (unsigned long)context_.ymm5;
+	write_register[PR_YMM6] = (unsigned long)context_.ymm6;
+	write_register[PR_YMM7] = (unsigned long)context_.ymm7;
+
 	write_register[PR_REG_CS] = context_.cs;
 	write_register[PR_REG_DS] = context_.ds;
 	write_register[PR_REG_ES] = context_.es;
 	write_register[PR_REG_FS] = context_.fs;
 	write_register[PR_REG_GS] = context_.gs;
 	write_register[PR_REG_SS] = context_.ss;
-
 
 	uc_engine *uc = (uc_engine *)engine;
 	if (uc_reg_write_batch(uc, x86_register, write_ptr, size) != 0)
@@ -371,6 +407,41 @@ bool __stdcall emulation_debugger::read_x64_cpu_context(void *engine)
 	context_.r14 = read_register[PR_R14];
 	context_.r15 = read_register[PR_R15];
 	context_.efl = (unsigned long)read_register[PR_EFLAGS];
+
+	context_.xmm0 = read_register[PR_XMM0];
+	context_.xmm1 = read_register[PR_XMM1];
+	context_.xmm2 = read_register[PR_XMM2];
+	context_.xmm3 = read_register[PR_XMM3];
+	context_.xmm4 = read_register[PR_XMM4];
+	context_.xmm5 = read_register[PR_XMM5];
+	context_.xmm6 = read_register[PR_XMM6];
+	context_.xmm7 = read_register[PR_XMM7];
+	context_.xmm8 = read_register[PR_XMM8];
+	context_.xmm9 = read_register[PR_XMM9];
+	context_.xmm10 = read_register[PR_XMM10];
+	context_.xmm11 = read_register[PR_XMM11];
+	context_.xmm12 = read_register[PR_XMM12];
+	context_.xmm13 = read_register[PR_XMM13];
+	context_.xmm14 = read_register[PR_XMM14];
+	context_.xmm15 = read_register[PR_XMM15];
+
+	context_.ymm0 = read_register[PR_YMM0];
+	context_.ymm1 = read_register[PR_YMM1];
+	context_.ymm2 = read_register[PR_YMM2];
+	context_.ymm3 = read_register[PR_YMM3];
+	context_.ymm4 = read_register[PR_YMM4];
+	context_.ymm5 = read_register[PR_YMM5];
+	context_.ymm6 = read_register[PR_YMM6];
+	context_.ymm7 = read_register[PR_YMM7];
+	context_.ymm8 = read_register[PR_YMM8];
+	context_.ymm9 = read_register[PR_YMM9];
+	context_.ymm10 = read_register[PR_YMM10];
+	context_.ymm11 = read_register[PR_YMM11];
+	context_.ymm12 = read_register[PR_YMM12];
+	context_.ymm13 = read_register[PR_YMM13];
+	context_.ymm14 = read_register[PR_YMM14];
+	context_.ymm15 = read_register[PR_YMM15];
+
 	context_.cs = (unsigned short)read_register[PR_REG_CS];
 	context_.ds = (unsigned short)read_register[PR_REG_DS];
 	context_.es = (unsigned short)read_register[PR_REG_ES];
@@ -421,6 +492,41 @@ bool __stdcall emulation_debugger::write_x64_cpu_context(void *engine)
 	write_register[PR_R14] = context_.r14;
 	write_register[PR_R15] = context_.r15;
 	write_register[PR_EFLAGS] = (unsigned long)context_.efl;
+
+	write_register[PR_XMM0] = context_.xmm0;
+	write_register[PR_XMM1] = context_.xmm1;
+	write_register[PR_XMM2] = context_.xmm2;
+	write_register[PR_XMM3] = context_.xmm3;
+	write_register[PR_XMM4] = context_.xmm4;
+	write_register[PR_XMM5] = context_.xmm5;
+	write_register[PR_XMM6] = context_.xmm6;
+	write_register[PR_XMM7] = context_.xmm7;
+	write_register[PR_XMM8] = context_.xmm8;
+	write_register[PR_XMM9] = context_.xmm9;
+	write_register[PR_XMM10] = context_.xmm10;
+	write_register[PR_XMM11] = context_.xmm11;
+	write_register[PR_XMM12] = context_.xmm12;
+	write_register[PR_XMM13] = context_.xmm13;
+	write_register[PR_XMM14] = context_.xmm14;
+	write_register[PR_XMM15] = context_.xmm15;
+
+	write_register[PR_YMM0] = context_.ymm0;
+	write_register[PR_YMM1] = context_.ymm1;
+	write_register[PR_YMM2] = context_.ymm2;
+	write_register[PR_YMM3] = context_.ymm3;
+	write_register[PR_YMM4] = context_.ymm4;
+	write_register[PR_YMM5] = context_.ymm5;
+	write_register[PR_YMM6] = context_.ymm6;
+	write_register[PR_YMM7] = context_.ymm7;
+	write_register[PR_YMM8] = context_.ymm8;
+	write_register[PR_YMM9] = context_.ymm9;
+	write_register[PR_YMM10] = context_.ymm10;
+	write_register[PR_YMM11] = context_.ymm11;
+	write_register[PR_YMM12] = context_.ymm12;
+	write_register[PR_YMM13] = context_.ymm13;
+	write_register[PR_YMM14] = context_.ymm14;
+	write_register[PR_YMM15] = context_.ymm15;
+
 	write_register[PR_REG_CS] = context_.cs;
 	write_register[PR_REG_DS] = context_.ds;
 	write_register[PR_REG_ES] = context_.es;
@@ -767,16 +873,6 @@ bool __stdcall emulation_debugger::load_context(void *mem)
 
 bool __stdcall emulation_debugger::reboot(void *mem)
 {
-	bool is_32 = false;
-
-	if (g_Ext->IsCurMachine32())
-	{
-		is_32 = true;
-		g_Ext->ExecuteSilent("!wow64exts.sw");
-	}
-	else
-		is_64_ = true;
-
 	uc_hook code_hook;
 	uc_hook write_unmap_hook;
 	uc_hook read_unmap_hook;
@@ -827,9 +923,6 @@ bool __stdcall emulation_debugger::reboot(void *mem)
 
 	if (!load_page(context_.rsp))
 		return false;
-
-	if (is_32)
-		g_Ext->ExecuteSilent("!wow64exts.sw");
 
 	return true;
 }
@@ -1228,5 +1321,5 @@ void __stdcall emulation_debugger::log_print()
 		dprintf("efl="), print32(context_.efl, backup_context_.efl), dprintf("\n");
 	}
 
-	print_code(context_.rip, 5);
+	print_code(context_.rip, 0);
 }
