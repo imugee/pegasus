@@ -84,6 +84,8 @@ bool __stdcall emulation_debugger::load(void *address)
 	if ((err = uc_mem_write(uc, mbi.BaseAddress, dump, (size_t)mbi.RegionSize)) != 0)
 		return false;
 
+	//dprintf("load::%08x-%08x\n", mbi.BaseAddress, mbi.RegionSize);
+
 	return true;
 }
 //
@@ -665,19 +667,25 @@ bool __stdcall emulation_debugger::mnemonic_wow_ret(void *engine)
 
 bool __stdcall emulation_debugger::mnemonic_switch_wow64cpu(void *engine)
 {
+	uc_err err;
 	uc_engine *uc = (uc_engine *)engine;
 	unsigned char dump[16] = { 0, };
 
-	if ((uc_mem_read(uc, context_.rip, dump, 16) == 0) && (dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
+	if ((err = uc_mem_read(uc, context_.rip, dump, 16)) == 0)
 	{
-		unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
-		unsigned long syscall = *syscall_ptr;
+		if ((dump[0] == 0xea && dump[5] == 0x33 && dump[6] == 0))
+		{
+			unsigned long *syscall_ptr = (unsigned long *)(&dump[1]);
+			unsigned long syscall = *syscall_ptr;
 
-		is_64_ = true;
-		context_.rip = syscall;
+			is_64_ = true;
+			context_.rip = syscall;
 
-		return true;
+			return true;
+		}
 	}
+	//else
+	//	dprintf("wow64fail::%d::%08x\n", err, context_.rip);
 
 	return false;
 }

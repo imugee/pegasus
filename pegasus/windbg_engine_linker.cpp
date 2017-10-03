@@ -209,12 +209,34 @@ bool __stdcall windbg_engine_linker::virtual_query(uint64_t address, void *conte
 	return true;
 }
 
-bool __stdcall windbg_engine_linker::virtual_query(uint64_t address, MEMORY_BASIC_INFORMATION64 *mbi)
+bool __stdcall windbg_engine_linker::virtual_query(unsigned long long ptr, MEMORY_BASIC_INFORMATION64 *mbi)
 {
-	if (g_Ext->m_Data2->QueryVirtual(address, mbi) != S_OK)
-		return false;
+	unsigned long long address = 0;
+	unsigned long long base = 0;
+	unsigned long long end = 0;
 
-	return true;
+	while (g_Ext->m_Data2->QueryVirtual(address, mbi) == S_OK)
+	{
+		if (mbi->BaseAddress > address)
+		{
+			address = mbi->BaseAddress;
+			continue;
+		}
+
+		base = (unsigned long long)mbi->BaseAddress;
+		end = base + mbi->RegionSize;
+
+		if (ptr >= base && ptr < end)
+		{
+			//dprintf("%08x=>%08x-%08x\n", ptr, base, end);
+			return true;
+		}
+
+		address += mbi->RegionSize;
+		memset(mbi, 0, sizeof(MEMORY_BASIC_INFORMATION64));
+	}
+
+	return false;
 }
 
 unsigned long __stdcall windbg_engine_linker::read_memory(uint64_t address, void *buffer, size_t buffer_size)

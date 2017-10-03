@@ -34,7 +34,7 @@ static void hook_unmap_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 		emulation_debugger::page unknown_page;
 		
-		if (!g_emulator->load_page(address))
+		if (!g_emulator->load((void *)address))
 		{
 			MEMORY_BASIC_INFORMATION64 mbi;
 			memset(&mbi, 0, sizeof(mbi));
@@ -112,23 +112,23 @@ static void hook_fetch_memory(uc_engine *uc, uc_mem_type type, uint64_t address,
 		unsigned char *unknown_dump = nullptr;
 		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
 
-		if (!g_emulator->load_page(address))
+		if (!g_emulator->load((void *)address))
 		{
-			windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
-			MEMORY_BASIC_INFORMATION64 mbi;
-			memset(&mbi, 0, sizeof(mbi));
+			//windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
+			//MEMORY_BASIC_INFORMATION64 mbi;
+			//memset(&mbi, 0, sizeof(mbi));
 
-			if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
-			{
-				unknown_dump = (unsigned char *)malloc(mbi.RegionSize);
-				if (unknown_dump && windbg_linker->read_memory(mbi.BaseAddress, unknown_dump, mbi.RegionSize))
-				{
-					uc_mem_map(uc, mbi.BaseAddress, mbi.RegionSize, UC_PROT_ALL);
-					uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
+			//if (windbg_linker->virtual_query(address, &mbi) && address >= mbi.BaseAddress)
+			//{
+			//	unknown_dump = (unsigned char *)malloc(mbi.RegionSize);
+			//	if (unknown_dump && windbg_linker->read_memory(mbi.BaseAddress, unknown_dump, mbi.RegionSize))
+			//	{
+			//		uc_mem_map(uc, mbi.BaseAddress, mbi.RegionSize, UC_PROT_ALL);
+			//		uc_mem_write(uc, mbi.BaseAddress, unknown_dump, mbi.RegionSize);
 
-					std::shared_ptr<void> dump_closer(unknown_dump, free);
-				}
-			}
+			//		std::shared_ptr<void> dump_closer(unknown_dump, free);
+			//	}
+			//}
 		}
 	}
 }
