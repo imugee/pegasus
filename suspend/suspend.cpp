@@ -35,7 +35,7 @@ void patch_32(unsigned long long ip)
 	ResumeProcess();
 }
 
-void restore_32(unsigned long long ip)
+void restore_32(unsigned long tid, unsigned long long ip)
 {
 	unsigned long old = 0;
 	if (VirtualProtect((void *)ip, 1024, PAGE_EXECUTE_READWRITE, &old))
@@ -46,6 +46,18 @@ void restore_32(unsigned long long ip)
 
 		VirtualProtect((void *)ip, 1024, old, &old);
 	}
+
+	HANDLE h_thread = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
+	CONTEXT context;
+	context.ContextFlags = CONTEXT_CONTROL;
+
+	GetThreadContext(h_thread, &context);
+#ifndef _WIN64
+	context.Eip = ip;
+#else
+	context.Rip = ip;
+#endif
+	SetThreadContext(h_thread, &context);
 }
 
 unsigned long check_32(unsigned long long ip)
@@ -126,7 +138,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 			tid = check_32(args->break_point);
 		} while (tid == 0);
 
-		restore_32(args->break_point);
+		restore_32(tid, args->break_point);
 
 		if (args->dll_path)
 		{
