@@ -442,7 +442,7 @@ bool __stdcall windbg_engine_linker::get_thread_context(cpu_context_type *contex
 		context->rsp = debug_value_array[DBG_X64_REG_IDX_RSP].I64;
 
 		context->rdi = debug_value_array[DBG_X64_REG_IDX_RDI].I64;
-		context->rdi = debug_value_array[DBG_X64_REG_IDX_RSI].I64;
+		context->rsi = debug_value_array[DBG_X64_REG_IDX_RSI].I64;
 
 		context->r8 = debug_value_array[DBG_X64_REG_IDX_R8].I64;
 		context->r9 = debug_value_array[DBG_X64_REG_IDX_R9].I64;
@@ -544,7 +544,7 @@ bool __stdcall windbg_engine_linker::get_thread_context(cpu_context_type *contex
 		context->rsp = debug_value_array[DBG_X86_REG_IDX_ESP].I32;
 
 		context->rdi = debug_value_array[DBG_X86_REG_IDX_EDI].I32;
-		context->rdi = debug_value_array[DBG_X86_REG_IDX_ESI].I32;
+		context->rsi = debug_value_array[DBG_X86_REG_IDX_ESI].I32;
 
 		context->rip = debug_value_array[DBG_X86_REG_IDX_EIP].I32;
 
