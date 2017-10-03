@@ -47,7 +47,7 @@ commands
 
 dbgsuit
 -------
-[unicorn-engine](https://github.com/0a777h/pegasus/blob/master/DBGSUIT.md)
+[dbgsuit](https://github.com/0a777h/pegasus/blob/master/DBGSUIT.md)
 
 inside
 -------
