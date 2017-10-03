@@ -45,6 +45,10 @@ commands
 ; 0:000> !reg command displays current registers.
 </pre>
 
+dbgsuit
+-------
+[unicorn-engine](https://github.com/0a777h/pegasus/blob/master/DBGSUIT.md)
+
 inside
 -------
 * [unicorn-engine](http://www.unicorn-engine.org/)
