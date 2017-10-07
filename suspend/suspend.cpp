@@ -1,9 +1,10 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <windows.h>
 #include <winternl.h>
 #include <stdio.h>
 #include <strsafe.h>
-#include <winhttp.h>
-#include <tlHelp32.h>
+#include <tlhelp32.h>
 
 #include "util.h"
 
@@ -115,10 +116,45 @@ unsigned long check_32(unsigned long long ip)
 DWORD WINAPI reopen(LPVOID args)
 {
 	PDLL_ARGS dll_args = (PDLL_ARGS)args;
+	wchar_t cmd[MAX_PATH];
+	wchar_t process_id[MAX_PATH];
 
-	_wsystem(dll_args->dll_path);
+	_itow(GetCurrentProcessId(), process_id, 10);
+
+	StringCbCopy(cmd, MAX_PATH, dll_args->dll_path);
+	StringCbCat(cmd, MAX_PATH, L"\\windbg.exe -pv -p ");
+	StringCbCat(cmd, MAX_PATH, process_id);
+	
+	STARTUPINFOW startup_info = { 0 };
+	PROCESS_INFORMATION proc_info = { 0 };
+	if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &startup_info, &proc_info))
+	{
+
+	}
 
 	return 0;
+}
+
+void __stdcall reopen(PDLL_ARGS dll_args)
+{
+	wchar_t cmd[MAX_PATH];
+	wchar_t process_id[MAX_PATH];
+
+	_itow(GetCurrentProcessId(), process_id, 10);
+
+	StringCbCopy(cmd, MAX_PATH, dll_args->dll_path);
+	StringCbCat(cmd, MAX_PATH, L"\\windbg.exe -pv -p ");
+	StringCbCat(cmd, MAX_PATH, process_id);
+
+	STARTUPINFOW startup_info = { 0 };
+	PROCESS_INFORMATION proc_info = { 0 };
+	if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &startup_info, &proc_info))
+	{
+		StringCbCopy(cmd, MAX_PATH, dll_args->dll_path);
+		StringCbCat(cmd, MAX_PATH, L"\\test.bat");
+
+		_wsystem(cmd);
+	}
 }
 ///
 ///
@@ -143,8 +179,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 		if (args->dll_path)
 		{
 			unsigned long oepn_tid = 0;
-			HANDLE h_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)reopen, args, 0, &oepn_tid);
-			WaitForSingleObject(h_thread, INFINITE);
+			//HANDLE h_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)reopen, args, 0, &oepn_tid);
+			//WaitForSingleObject(h_thread, INFINITE);
+			reopen(args);
 		}
 	}
 }

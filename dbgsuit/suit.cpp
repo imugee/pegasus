@@ -26,7 +26,7 @@ EXT_CLASS_COMMAND(WindbgEngine, suspend, "", "{p;ed,o;p;;}" )
 		return;
 
 	GetCurrentDirectoryW(MAX_PATH, dll_args.dll_path);
-	StringCbCat(dll_args.dll_path, MAX_PATH, L"\\test.bat");
+	//StringCbCat(dll_args.dll_path, MAX_PATH, L"\\test.bat");
 
 	dll_args.break_point = GetArgU64("p", FALSE);
 
