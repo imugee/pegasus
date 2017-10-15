@@ -174,7 +174,6 @@ EXT_CLASS_COMMAND(EmulationEngine, attach, "", "{p;s;p;.}")
 	{
 		GetCurrentDirectory(MAX_PATH, g_log_path);
 		windbg_engine_linker *windbg_linker = (windbg_engine_linker *)g_emulator->get_windbg_linker();
-		windbg_linker->write_file_log(g_log_path, L"emul.log", L"::::::: attach debuggee :::::::\n");
 
 		g_emulator->log_print();
 

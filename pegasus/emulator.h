@@ -96,6 +96,7 @@ public:
 
 	virtual bool __stdcall load(void *address);
 
+	virtual bool __stdcall set_msr();
 	virtual bool __stdcall set_environment_block();
 	virtual bool __stdcall create_global_descriptor_table_ex();
 

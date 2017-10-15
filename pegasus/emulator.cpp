@@ -150,6 +150,21 @@ bool __stdcall emulation_debugger::read(unsigned long long address, unsigned cha
 //
 //
 //
+bool __stdcall emulation_debugger::set_msr()
+{
+	uc_engine * uc = (uc_engine *)engine_;
+	uc_x86_msr fs_msr = { 0xC0000100, teb_address_ };
+	uc_x86_msr gs_msr = { 0xC0000101, teb_64_address_ };
+
+	if (uc_reg_write(uc, UC_X86_REG_MSR, &fs_msr) != 0)
+		return false;
+
+	if (uc_reg_write(uc, UC_X86_REG_MSR, &gs_msr) != 0)
+		return false;
+
+	return true;
+}
+
 bool __stdcall emulation_debugger::set_environment_block()
 {
 	peb_address_ = windbg_linker_.get_peb_address();
@@ -937,7 +952,7 @@ bool __stdcall emulation_debugger::reboot(void *mem)
 //
 //
 //
-bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, load_gdt에서 실패하게 된다.
+bool __stdcall emulation_debugger::attach(void *mem)
 {
 	uc_hook code_hook;
 	uc_hook write_unmap_hook;
@@ -984,6 +999,9 @@ bool __stdcall emulation_debugger::attach(void *mem) // 이 기능을 사용할 경우, l
 		return false;
 
 	if (!create_global_descriptor_table_ex())
+		return false;
+
+	if (set_msr())
 		return false;
 
 	if (!load_context(uc, item->mode))
@@ -1162,6 +1180,9 @@ bool __stdcall emulation_debugger::switch_cpu(void *mem)
 		uc_close(switch_engine);
 		return false;
 	}
+
+	if (set_msr())
+		return false;
 
 	uc_close(current_engine);
 	engine_ = switch_engine;
