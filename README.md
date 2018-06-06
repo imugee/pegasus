@@ -45,15 +45,4 @@ commands
 ; 0:000> !reg command displays current registers.
 </pre>
 
-dbgsuit
--------
-[dbgsuit](https://github.com/0a777h/pegasus/blob/master/DBGSUIT.md)
-
-inside
--------
-* [unicorn-engine](http://www.unicorn-engine.org/)
-* [distorm](https://github.com/gdabah/distorm)
-
-special thanks
--------
 [chae](http://trunk.so/) - malware researcher and analyst

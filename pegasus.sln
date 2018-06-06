@@ -7,12 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pegasus", "pegasus\pegasus.vcxproj", "{00E16F16-FCB0-4F74-B1BB-27DEAEEAF82C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dbgsuit", "dbgsuit\dbgsuit.vcxproj", "{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "suit", "suit", "{7BA16828-BB57-4054-99BC-87A3515A333C}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "suspend", "suspend\suspend.vcxproj", "{6827FD24-85AD-446D-898E-5FDFE494F3FD}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -37,28 +31,8 @@ Global
 		{00E16F16-FCB0-4F74-B1BB-27DEAEEAF82C}.Release|x64.Build.0 = Release|x64
 		{00E16F16-FCB0-4F74-B1BB-27DEAEEAF82C}.Release|x86.ActiveCfg = Release|Win32
 		{00E16F16-FCB0-4F74-B1BB-27DEAEEAF82C}.Release|x86.Build.0 = Release|Win32
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Debug|x64.ActiveCfg = Debug|x64
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Debug|x64.Build.0 = Debug|x64
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Debug|x86.ActiveCfg = Debug|Win32
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Debug|x86.Build.0 = Debug|Win32
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Release|x64.ActiveCfg = Release|x64
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Release|x64.Build.0 = Release|x64
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Release|x86.ActiveCfg = Release|Win32
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42}.Release|x86.Build.0 = Release|Win32
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Debug|x64.ActiveCfg = Debug|x64
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Debug|x64.Build.0 = Debug|x64
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Debug|x86.ActiveCfg = Debug|Win32
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Debug|x86.Build.0 = Debug|Win32
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Release|x64.ActiveCfg = Release|x64
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Release|x64.Build.0 = Release|x64
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Release|x86.ActiveCfg = Release|Win32
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{1A64201D-F0CE-41AF-BC63-7E9A4BC45F42} = {7BA16828-BB57-4054-99BC-87A3515A333C}
-		{6827FD24-85AD-446D-898E-5FDFE494F3FD} = {7BA16828-BB57-4054-99BC-87A3515A333C}
 	EndGlobalSection
 EndGlobal
