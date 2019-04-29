@@ -33,12 +33,9 @@ Developers
 
 Dependencies
 -------
-* [XDVRE](https://github.com/gdabah/distorm)
+* [XDVRE](https://github.com/xdvre/xdv)
 
 Special Thanks To ...
 -------
-* [Yonggoo Noh](https://github.com/ygnoh)
 * [Chae Jong Bin](https://github.com/Necrosys)
-* [Junyoung Kim](https://github.com/junyoungKimGit)
 * [Jaehoon Ahn](https://github.com/dkswognsdi)
-* [Jeonghoon Kim](https://github.com/ppiizzaa)
