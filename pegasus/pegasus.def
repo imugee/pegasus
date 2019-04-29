@@ -1,22 +1,13 @@
 LIBRARY PEGASUS
 
 EXPORTS
-	; ExtCpp framework.
+	; ExtCpp framework
 	DebugExtensionInitialize
 	DebugExtensionUninitialize
 	DebugExtensionNotify
 
-	; test
-	test
-	test2
-
-	; emul
+	arch
 	attach
-	detach
-	trace
 
-	reg
-	dbvm
-	ddvm
-
-	steps
+	stepinto
+	stepover

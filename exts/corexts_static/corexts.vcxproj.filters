@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="xvar.cpp" />
+    <ClCompile Include="object.cpp" />
+    <ClCompile Include="command.cpp" />
+    <ClCompile Include="parser.cpp" />
+    <ClCompile Include="print.cpp" />
+    <ClCompile Include="worker.cpp" />
+    <ClCompile Include="arch.cpp" />
+    <ClCompile Include="external.cpp" />
+    <ClCompile Include="code_injection.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\dist\inc\xdv\xdv_sdk.h" />
+  </ItemGroup>
+</Project>

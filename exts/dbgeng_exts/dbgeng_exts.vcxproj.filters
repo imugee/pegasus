@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="dbgeng_exts.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dbgeng_exts.cpp" />
+    <ClCompile Include="debug_routine.cpp" />
+    <ClCompile Include="breakpoint.cpp">
+      <Filter>break_point</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="break_point">
+      <UniqueIdentifier>{f8edcb82-5da9-432b-9c1d-1e3fbb71a7fa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -6,28 +6,18 @@ class WindbgEngine : public ExtExtension
 public:
 	WindbgEngine();
 	virtual HRESULT Initialize(void);
-
-	void test();
-	void test2();
 };
-///
-///
-///
-class EmulationEngine : public ExtExtension
+
+class EmulatorEngine : public ExtExtension
 {
 public:
-	EmulationEngine();
+	EmulatorEngine() {}
 
+	void arch();
 	void attach();
-	void detach();
 
-	void trace();
-	void reg();
-
-	void dbvm();
-	void ddvm();
-
-	void steps();
+	void stepinto();
+	void stepover();
 };
 
 #endif
