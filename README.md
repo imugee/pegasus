@@ -13,6 +13,10 @@ Supported File Formats
   <tr> 
     <td align="center" colspan="2"><b> File format </b></td>
   </tr>
+   <tr> 
+    <td align="center"> Windows user-mode live debugging </td>
+    <td align="center"><img src="https://img.shields.io/badge/Supported-brightgreen.svg"></td>
+  </tr> 
   <tr> 
     <td align="center"> Windows full user-mode dump file </td>
     <td align="center"><img src="https://img.shields.io/badge/Supported-brightgreen.svg"></td>
