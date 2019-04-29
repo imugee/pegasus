@@ -1,48 +1,40 @@
-pegasus - Windbg extension DLL for emulation
+Pegasus - Windbg extension DLL for emulation
 -------
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Support](https://img.shields.io/badge/support-live-brightgreen.svg) 
-![Support](https://img.shields.io/badge/support-dump-brightgreen.svg)
 
-demo
+Demo
 -------
 * video - https://goo.gl/TBNaHf
 * [screenshots](https://github.com/0a777h/pegasus/tree/master/screenshot)
 
-commands
+Supported File Formats
 -------
-<pre>
-0:000> .load pegasus.dll
-*****************************************************
-*                                                   *
-*         PEGASUS - Windbg emulation plugin         *
-*                                                   *
-*****************************************************
+<table>
+  <tr> 
+    <td align="center" colspan="2"><b> File format </b></td>
+  </tr>
+  <tr> 
+    <td align="center"> Windows full user-mode dump file </td>
+    <td align="center"><img src="https://img.shields.io/badge/Supported-brightgreen.svg"></td>
+  </tr>
+  <tr> 
+    <td align="center"> Windows complete kernel-mode dump file </td>
+    <td align="center"><img src="https://img.shields.io/badge/Scheduled-red.svg"></td>	
+  </tr>
+</table>
 
-0:000> !attach -?
-; 0:000> !attach command attachs the current target application to the emulator.
+Developers
+-------
+* [Park Seong Bin](https://github.com/0a777h)
 
-0:000> !detach -?
-; 0:000> !detach command detachs the current target application to the emulator.
+Dependencies
+-------
+* [XDVRE](https://github.com/gdabah/distorm)
 
-0:000> !trace -?
-; !trace [/so] [/bp <bp>]
-;  /bp - break point. (space-delimited)
-;  /so - step over.
-; 0:000> !trace command executes a single instruction.
-
-0:000> !steps -?
-; 0:000> !steps command displays the trace step.
-
-0:000> !ddvm -?
-0:000> !dbvm -?
-; !dbvm [/a <a>] [/l <l>]
-;  /a <a> - address (space-delimited)
-;  /l <l> - length (space-delimited)
-; 0:000> !dbvm command displays the contents of memory in the given range.
-
-0:000> !regs -?
-; 0:000> !reg command displays current registers.
-</pre>
-
-[chae](http://trunk.so/) - malware researcher and analyst
+Special Thanks To ...
+-------
+* [Yonggoo Noh](https://github.com/ygnoh)
+* [Chae Jong Bin](https://github.com/Necrosys)
+* [Junyoung Kim](https://github.com/junyoungKimGit)
+* [Jaehoon Ahn](https://github.com/dkswognsdi)
+* [Jeonghoon Kim](https://github.com/ppiizzaa)
