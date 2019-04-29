@@ -33,7 +33,7 @@ Developers
 
 Dependencies
 -------
-* [XDVRE](https://github.com/xdvre/xdv)
+* [XDVRE](https://github.com/xdvre/xdvre)
 
 Special Thanks To ...
 -------
