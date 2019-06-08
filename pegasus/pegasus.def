@@ -1,4 +1,4 @@
-LIBRARY PEGASUS
+LIBRARY DBGHLPR
 
 EXPORTS
 	; ExtCpp framework
@@ -11,3 +11,8 @@ EXPORTS
 
 	stepinto
 	stepover
+
+	;
+	;
+	find
+	ut

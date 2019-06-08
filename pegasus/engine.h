@@ -6,6 +6,9 @@ class WindbgEngine : public ExtExtension
 public:
 	WindbgEngine();
 	virtual HRESULT Initialize(void);
+
+	void find();
+	void ut();
 };
 
 class EmulatorEngine : public ExtExtension
