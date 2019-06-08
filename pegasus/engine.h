@@ -9,6 +9,8 @@ public:
 
 	void find();
 	void ut();
+	void refstr();
+	void refexe();
 };
 
 class EmulatorEngine : public ExtExtension

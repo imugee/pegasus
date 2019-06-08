@@ -32,11 +32,11 @@ HRESULT WindbgEngine::Initialize()
 	ExtensionApis.nSize = sizeof(ExtensionApis);
 	debug_control->GetWindbgExtensionApis64(&ExtensionApis);
 
-	dprintf(" *****************************************************\n");
-	dprintf(" *                                                   *\n");
-	dprintf(" *         PEGASUS - Windbg emulation plugin         *\n");
-	dprintf(" *                                                   *\n");
-	dprintf(" *****************************************************\n");
+	dprintf(" *****************************************************************************\n");
+	dprintf(" *                                                                           *\n");
+	dprintf(" *         PEGASUS - reverse engineering extension plugin for windbg         *\n");
+	dprintf(" *                                                                           *\n");
+	dprintf(" *****************************************************************************\n");
 
 	dprintf(" [+] System\n");
 	IObject * arch = __add_object(x86Architecture);

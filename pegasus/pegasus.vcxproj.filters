@@ -38,14 +38,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="exts">
+      <UniqueIdentifier>{c04eba37-e2fe-407f-9f49-d48c48b93af9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="import">
       <UniqueIdentifier>{c00850bc-a515-4d5b-b782-72af21ac222f}</UniqueIdentifier>
     </Filter>
     <Filter Include="import\dbgeng">
       <UniqueIdentifier>{9364029c-f724-4872-9396-94d0fffeaf02}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="exts">
-      <UniqueIdentifier>{c04eba37-e2fe-407f-9f49-d48c48b93af9}</UniqueIdentifier>
     </Filter>
     <Filter Include="import\xdv">
       <UniqueIdentifier>{63eb07df-3555-4065-83df-847a3567c3d9}</UniqueIdentifier>

@@ -16,3 +16,5 @@ EXPORTS
 	;
 	find
 	ut
+	refstr
+	refexe
