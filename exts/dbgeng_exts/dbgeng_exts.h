@@ -1,7 +1,13 @@
 #ifndef __DEFINE_DBGHLPR_DBGENG_SYSTEM_EXTS_HEADER__
 #define __DEFINE_DBGHLPR_DBGENG_SYSTEM_EXTS_HEADER__
 
+// #define DLL_VERSION
+
+#ifdef DLL_VERSION
 #include "xdv_sdk.h"
+#else
+#include "xdv_interface.h"
+#endif
 
 typedef struct _tag_tmp_bp
 {

@@ -12,7 +12,13 @@
 #pragma comment(lib, "dbgcore_static.lib")
 #endif
 
+// #define DLL_VERSION
+
+#ifdef DLL_VERSION
 #include "xdv_sdk.h"
+#else
+#include "xdv_interface.h"
+#endif
 
 #pragma pack(push, 1)
 typedef struct _SegmentDescriptor 

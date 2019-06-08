@@ -4,7 +4,13 @@
 #include <capstone.h>
 #include <keystone.h>
 
+// #define DLL_VERSION
+
+#ifdef DLL_VERSION
 #include "xdv_sdk.h"
+#else
+#include "xdv_interface.h"
+#endif
 #include <windows.h>
 #include <mutex>
 

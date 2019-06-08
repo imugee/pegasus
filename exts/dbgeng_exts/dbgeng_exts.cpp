@@ -1623,7 +1623,7 @@ std::map<unsigned long long, unsigned char *> DbgEngSystem::GetBreakPointMap()
 
 //
 //
-#if 0
+#ifdef DLL_VERSION
 XENOM_ADD_INTERFACE()
 {
 	IObject * obj = __add_object(DbgEngSystem);

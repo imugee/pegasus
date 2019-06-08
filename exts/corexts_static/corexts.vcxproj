@@ -104,7 +104,7 @@
     <ClCompile Include="xvar.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\dist\inc\xdv\xdv_sdk.h" />
+    <ClInclude Include="..\..\dist\inc\xdv\xdv_interface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,21 +6,6 @@
 #include <emulator.h>
 #include <dbgeng_exts.h>
 
-template<class T>
-XDV_WINDOWS_EXPORT
-T * AddInterface()
-{
-	T *o = new T();
-	IObject *object = (IObject *)o;
-	if (XdvAddObject(o))
-	{
-		return o;
-	}
-
-	return nullptr;
-}
-#define __add_object(type_class) AddInterface<type_class>()
-
 #pragma comment(lib, "corexts.lib")
 #pragma comment(lib, "x64_arch_exts.lib")
 #pragma comment(lib, "x86_arch_exts.lib")

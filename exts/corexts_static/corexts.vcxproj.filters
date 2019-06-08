@@ -12,6 +12,6 @@
     <ClCompile Include="code_injection.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\dist\inc\xdv\xdv_sdk.h" />
+    <ClInclude Include="..\..\dist\inc\xdv\xdv_interface.h" />
   </ItemGroup>
 </Project>

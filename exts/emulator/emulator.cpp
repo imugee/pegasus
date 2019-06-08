@@ -413,7 +413,7 @@ std::vector<unsigned long long> Emulator::GetBreakPointList()
 	return v;
 }
 
-#if 0
+#ifdef DLL_VERSION
 XENOM_ADD_INTERFACE()
 {
 	IObject * obj = __add_object(Emulator);

@@ -1141,7 +1141,7 @@ bool x86Architecture::IsInterruptCode(unsigned long long ptr, unsigned char *dum
 
 //
 //
-#if 0
+#ifdef DLL_VERSION
 XENOM_ADD_INTERFACE()
 {
 	IObject * obj = __add_object(x86Architecture);
