@@ -98,6 +98,8 @@
   <ItemGroup>
     <ClCompile Include="analyzer_exts.cpp" />
     <ClCompile Include="emulator_exts.cpp" />
+    <ClCompile Include="kernelib.cpp" />
+    <ClCompile Include="kernel_exts.cpp" />
     <ClCompile Include="libs.cpp" />
     <ClCompile Include="engextcpp.cpp" />
     <ClCompile Include="engine.cpp" />
@@ -107,6 +109,7 @@
     <ClInclude Include="emulator.h" />
     <ClInclude Include="engextcpp.hpp" />
     <ClInclude Include="engine.h" />
+    <ClInclude Include="kernelib.h" />
     <ClInclude Include="x64_arch_exts.h" />
     <ClInclude Include="x86_arch_exts.h" />
   </ItemGroup>

@@ -16,6 +16,12 @@
     <ClCompile Include="analyzer_exts.cpp">
       <Filter>exts</Filter>
     </ClCompile>
+    <ClCompile Include="kernel_exts.cpp">
+      <Filter>exts</Filter>
+    </ClCompile>
+    <ClCompile Include="kernelib.cpp">
+      <Filter>import\dbgeng</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engextcpp.hpp">
@@ -35,6 +41,9 @@
     </ClInclude>
     <ClInclude Include="x86_arch_exts.h">
       <Filter>import\xdv</Filter>
+    </ClInclude>
+    <ClInclude Include="kernelib.h">
+      <Filter>import\dbgeng</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

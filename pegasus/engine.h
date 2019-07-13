@@ -25,4 +25,12 @@ public:
 	void stepover();
 };
 
+class KernelMode : public ExtExtension
+{
+public:
+	KernelMode() {}
+
+	void pl();
+};
+
 #endif
