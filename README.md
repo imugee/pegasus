@@ -1,4 +1,4 @@
-Pegasus - Windbg extension DLL for emulation
+Pegasus - reverse engineering extension plugin for windbg
 -------
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
@@ -34,6 +34,10 @@ Developers
 Dependencies
 -------
 * [XDVRE](https://github.com/xdvre/xdvre)
+
+Documentation
+-------
+* [Wiki](https://github.com/0a777h/pegasus/wiki/Pegasus)
 
 Special Thanks To ...
 -------
