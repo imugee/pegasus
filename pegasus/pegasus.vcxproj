@@ -113,6 +113,26 @@
   <ItemGroup>
     <None Include="pegasus.def" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\exts\corexts_static\corexts.vcxproj">
+      <Project>{8d356689-5fdc-4b02-b650-28e2bd9c1546}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\exts\dbgeng_exts\dbgeng_exts.vcxproj">
+      <Project>{34455f49-44b7-4d2f-8142-806a869f1877}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\exts\emulator\emulator.vcxproj">
+      <Project>{441c45e0-f6ef-4d75-a950-bc2a9506426b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\exts\x64_arch_exts\x64_arch_exts.vcxproj">
+      <Project>{70a1054b-ce84-42c2-a250-5cba2b77e976}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\exts\x86_arch_exts\x86_arch_exts.vcxproj">
+      <Project>{68481069-828a-459c-be37-5905377759b0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\test\test.vcxproj">
+      <Project>{cef77389-b008-41cd-9a4a-6613134e5c18}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

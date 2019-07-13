@@ -362,6 +362,7 @@ bool x86Architecture::check_ptr(xdv_handle ih, unsigned long long ptr)
 
 void x86Architecture::FindReferenceValue(xdv_handle ih, unsigned long long base, size_t size, ref_callback_type cb, void *cb_ctx)
 {
+	MessageBox(nullptr, L"86", L"", MB_OK);
 	unsigned char *dump = (unsigned char *)malloc(size);
 	if (!dump)
 	{

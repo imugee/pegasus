@@ -38,32 +38,19 @@ HRESULT WindbgEngine::Initialize()
 	dprintf(" *                                                                           *\n");
 	dprintf(" *****************************************************************************\n");
 
-	dprintf(" [+] System\n");
 	IObject * arch = __add_object(x86Architecture);
 	if (arch)
 	{
-		dprintf(" [-] x86Architecture\n");
 		XdvSetArchitectureHandle(arch);
 	}
-
-	if (__add_object(x64Architecture))
-	{
-		dprintf(" [-] x64Architecture\n");
-	}
-
-	if (__add_object(DbgEngSystem))
-	{
-		dprintf(" [-] DbgEngSystem\n");
-	}
+	__add_object(x64Architecture);
+	__add_object(DbgEngSystem);
 
 	IObject * emulator = __add_object(Emulator);
 	if (emulator)
 	{
-		dprintf(" [-] Emulator\n");
 		XdvSetParserHandle(emulator);
 	}
-
-	dprintf("\n");
 	return S_OK;
 }
 

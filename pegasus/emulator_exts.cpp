@@ -15,37 +15,6 @@ void PrintCurrentContext();
 
 //
 //
-EXT_CLASS_COMMAND(EmulatorEngine, arch, "", "{;ed,o;bit;;}")
-{
-	unsigned long n = GetNumUnnamedArgs();
-	if (n == 0)
-	{
-		return;
-	}
-
-	IObject * arch = nullptr;
-	unsigned long long bit = GetUnnamedArgU64(0);
-	std::string name;
-	if (bit == 0x32)
-	{
-		arch = XdvGetObjectByString("x86");
-		name = "x86 arch";
-	}
-	else if (bit == 0x64)
-	{
-		arch = XdvGetObjectByString("x64");
-		name = "x64 arch";
-	}
-	else
-	{
-		dprintf(" [+] unsupported arch..\n");
-		return;
-	}
-
-	XdvSetArchitectureHandle(arch);
-	dprintf(" [+] emulator arch=>%s\n\n", name.c_str());
-}
-
 EXT_CLASS_COMMAND(EmulatorEngine, attach, "", "{bit;ed,o;bit;;}")
 {
 	if (XdvAttachProcess(XdvGetParserHandle(), 0))

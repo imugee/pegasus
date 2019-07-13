@@ -7,6 +7,7 @@ public:
 	WindbgEngine();
 	virtual HRESULT Initialize(void);
 
+	void arch();
 	void find();
 	void ut();
 	void refstr();
@@ -18,7 +19,6 @@ class EmulatorEngine : public ExtExtension
 public:
 	EmulatorEngine() {}
 
-	void arch();
 	void attach();
 
 	void stepinto();

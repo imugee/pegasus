@@ -305,6 +305,7 @@ bool x64Architecture::check_ptr(xdv_handle ih, unsigned long long ptr)
 
 void x64Architecture::FindReferenceValue(xdv_handle ih, unsigned long long base, size_t size, ref_callback_type cb, void *cb_ctx)
 {
+	MessageBox(nullptr, L"64", L"", MB_OK);
 	unsigned char *dump = (unsigned char *)malloc(size);
 	if (!dump)
 	{
@@ -1100,7 +1101,6 @@ bool x64Architecture::IsInterruptCode(unsigned long long ptr, unsigned char *dum
 	return r;
 }
 
-//
 // 
 #ifdef DLL_VERSION
 XENOM_ADD_INTERFACE()
