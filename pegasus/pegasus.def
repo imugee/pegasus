@@ -6,15 +6,20 @@ EXPORTS
 	DebugExtensionUninitialize
 	DebugExtensionNotify
 
-	arch
+	; ExtEmulator
 	attach
 
 	stepinto
 	stepover
 
-	;
-	;
+	; ExtAnalyzer
+	arch
 	find
 	ut
 	refstr
 	refexe
+
+	; ExtKernel
+	lp
+	kd_process
+	lvm

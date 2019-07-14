@@ -30,7 +30,10 @@ class KernelMode : public ExtExtension
 public:
 	KernelMode() {}
 
-	void pl();
+	void lp();
+	void kd_process();
+
+	void lvm();
 };
 
 #endif

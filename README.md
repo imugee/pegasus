@@ -23,7 +23,7 @@ Supported File Formats
   </tr>
   <tr> 
     <td align="center"> Windows complete kernel-mode dump file </td>
-    <td align="center"><img src="https://img.shields.io/badge/Scheduled-red.svg"></td>	
+    <td align="center"><img src="https://img.shields.io/badge/Working-yellow.svg"></td>	
   </tr>
 </table>
 
