@@ -69,6 +69,8 @@ public:
 	char * Name();
 	unsigned long Pid();
 	unsigned long long EProcess();
+
+	bool QueryVirtual(unsigned long long base, MEMORY_BASIC_INFORMATION *mbi);
 };
 
 #endif

@@ -46,7 +46,7 @@ EXT_CLASS_COMMAND(KernelMode, kd_process, "", "{;ed,o;eprocess;;}")
 	_eprocess = eprocess;
 }
 
-EXT_CLASS_COMMAND(KernelMode, lvm, "", "{;ed,o;eprocess;;}")
+EXT_CLASS_COMMAND(KernelMode, lvm, "", "{;ed,o;ptr;;}")
 {
 	if (_eprocess == 0)
 	{
@@ -60,8 +60,23 @@ EXT_CLASS_COMMAND(KernelMode, lvm, "", "{;ed,o;eprocess;;}")
 	}
 
 	std::vector<WindbgProcess::VadNodePtr> vads = process->Vads();
-	for (auto it : vads)
+	unsigned long n = GetNumUnnamedArgs();
+	if (n == 0)
 	{
-		dprintf("   %0*I64x-%0*I64x, %d %d %d\n", 16, it->start, 16, it->end, it->commit, it->protect, it->type);
+		for (auto it : vads)
+		{
+			dprintf("   %0*I64x-%0*I64x, %d %d %d\n", 16, it->start, 16, it->end, it->commit, it->protect, it->type);
+		}
+	}
+	else
+	{
+		unsigned long long ptr = GetUnnamedArgU64(0);
+		MEMORY_BASIC_INFORMATION mbi;
+		if (process->QueryVirtual(ptr, &mbi))
+		{
+			dprintf("   %0*I64x-%0*I64x, %d %d\n", 16, mbi.BaseAddress, 16, mbi.RegionSize, mbi.AllocationProtect, mbi.Type);
+		}
 	}
 }
+
+

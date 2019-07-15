@@ -198,3 +198,90 @@ std::vector<WindbgProcess::VadNodePtr> WindbgProcess::Vads()
 
 	return vads_;
 }
+
+//
+typedef enum _MI_VAD_TYPE
+{
+	VadNone,
+	VadDevicePhysicalMemory,
+	VadImageMap,
+	VadAwe,
+	VadWriteWatch,
+	VadLargePages,
+	VadRotatePhysical,
+	VadLargePageSection
+} MI_VAD_TYPE, *PMI_VAD_TYPE;
+
+#define PAGE_ALIGN(x)     ((x) & 0xFFFFF000)
+#define PAGE_ALIGN64(x)   ((x) & 0xFFFFFFFFFFFFF000)
+#define MAX_ARGUMENT_LENGTH		1024
+
+ULONG MmProtectToValue[32] =
+{
+	PAGE_NOACCESS,
+	PAGE_READONLY,
+	PAGE_EXECUTE,
+	PAGE_EXECUTE_READ,
+	PAGE_READWRITE,
+	PAGE_WRITECOPY,
+	PAGE_EXECUTE_READWRITE,
+	PAGE_EXECUTE_WRITECOPY,
+	PAGE_NOACCESS,
+	PAGE_NOCACHE | PAGE_READONLY,
+	PAGE_NOCACHE | PAGE_EXECUTE,
+	PAGE_NOCACHE | PAGE_EXECUTE_READ,
+	PAGE_NOCACHE | PAGE_READWRITE,
+	PAGE_NOCACHE | PAGE_WRITECOPY,
+	PAGE_NOCACHE | PAGE_EXECUTE_READWRITE,
+	PAGE_NOCACHE | PAGE_EXECUTE_WRITECOPY,
+	PAGE_NOACCESS,
+	PAGE_GUARD | PAGE_READONLY,
+	PAGE_GUARD | PAGE_EXECUTE,
+	PAGE_GUARD | PAGE_EXECUTE_READ,
+	PAGE_GUARD | PAGE_READWRITE,
+	PAGE_GUARD | PAGE_WRITECOPY,
+	PAGE_GUARD | PAGE_EXECUTE_READWRITE,
+	PAGE_GUARD | PAGE_EXECUTE_WRITECOPY,
+	PAGE_NOACCESS,
+	PAGE_WRITECOMBINE | PAGE_READONLY,
+	PAGE_WRITECOMBINE | PAGE_EXECUTE,
+	PAGE_WRITECOMBINE | PAGE_EXECUTE_READ,
+	PAGE_WRITECOMBINE | PAGE_READWRITE,
+	PAGE_WRITECOMBINE | PAGE_WRITECOPY,
+	PAGE_WRITECOMBINE | PAGE_EXECUTE_READWRITE,
+	PAGE_WRITECOMBINE | PAGE_EXECUTE_WRITECOPY
+};
+
+bool WindbgProcess::QueryVirtual(unsigned long long base, MEMORY_BASIC_INFORMATION *mbi)
+{
+	unsigned long long address = PAGE_ALIGN64(base);
+	for (auto it : vads_)
+	{
+		if (it->start <= address && it->end >= address)
+		{
+			mbi->AllocationBase = (void *)it->start;
+			mbi->BaseAddress = (void *)address;
+			mbi->AllocationProtect = MmProtectToValue[it->protect];
+			mbi->RegionSize = it->end - address;
+
+			if ((it->is_private) ||
+				(it->type == VadRotatePhysical))
+			{
+				mbi->Type = MEM_PRIVATE;
+			}
+			else if (it->type == VadImageMap)
+			{
+				mbi->Type = MEM_IMAGE;
+			}
+			else
+			{
+				mbi->Type = MEM_MAPPED;
+			}
+			mbi->Protect = 0; // MiQueryMemoryBasicInformation..
+			mbi->State = 0; // MiQueryMemoryBasicInformation..
+
+			return true;
+		}
+	}
+	return false;
+}
