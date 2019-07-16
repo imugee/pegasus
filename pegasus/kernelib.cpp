@@ -199,6 +199,11 @@ std::vector<WindbgProcess::VadNodePtr> WindbgProcess::Vads()
 	return vads_;
 }
 
+unsigned long long WindbgProcess::Peb()
+{
+	return eprocess_node_.Field("Peb").GetUlong64();
+}
+
 //
 typedef enum _MI_VAD_TYPE
 {
@@ -284,4 +289,46 @@ bool WindbgProcess::QueryVirtual(unsigned long long base, MEMORY_BASIC_INFORMATI
 		}
 	}
 	return false;
+}
+
+std::wstring WindbgProcess::GetModuleName(unsigned long long ptr, bool path)
+{
+	ExtRemoteTyped ldr_node = eprocess_node_.Field("Peb").Field("Ldr");
+	if (ldr_node.GetUlong64())
+	{
+		ExtRemoteTyped InLoadOrderModuleList = ldr_node.Field("InLoadOrderModuleList");
+		do
+		{
+			unsigned long long flink = InLoadOrderModuleList.Field("Flink").GetUlong64();
+			ExtRemoteTyped current = ExtRemoteTyped("(nt!_LDR_DATA_TABLE_ENTRY*)@$extin", flink);
+			unsigned long long dll_base = current.Field("DllBase").GetUlong64();
+			//ExtRemoteTyped bug = current.Field("SizeOfImage");
+			//unsigned long dll_size = bug.GetUlong();
+			unsigned long long dll_end = dll_base + current.Field("SizeOfImage").GetUlong();
+
+			wchar_t dll_name[MAX_PATH] = { 0, };
+			unsigned long long buffer = 0;
+			if (path)
+			{
+				buffer = current.Field("FullDllName").Field("Buffer").GetUlong64();
+			}
+			else
+			{
+				buffer = current.Field("BaseDllName").Field("Buffer").GetUlong64();
+			}
+			unsigned long readn = 0;
+			if (g_Ext->m_Data4->ReadVirtual(buffer, dll_name, sizeof(dll_name), &readn) != S_OK)
+			{
+				break;
+			}
+
+			if(dll_base <= ptr && dll_end >= ptr)
+			{
+				return dll_name;
+			}
+
+			InLoadOrderModuleList = current.Field("InLoadOrderLinks").Field("Flink");
+		} while (1);
+	}
+	return L"";
 }

@@ -69,8 +69,10 @@ public:
 	char * Name();
 	unsigned long Pid();
 	unsigned long long EProcess();
+	unsigned long long Peb();
 
 	bool QueryVirtual(unsigned long long base, MEMORY_BASIC_INFORMATION *mbi);
+	std::wstring GetModuleName(unsigned long long ptr, bool path);
 };
 
 #endif

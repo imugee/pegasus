@@ -32,8 +32,10 @@ public:
 
 	void lp();
 	void kd_process();
+	void kd_thread();
 
-	void lvm();
+	void queryvm();
+	void current();
 };
 
 #endif

@@ -22,4 +22,7 @@ EXPORTS
 	; ExtKernel
 	lp
 	kd_process
-	lvm
+	kd_thread
+
+	queryvm
+	current
