@@ -52,7 +52,7 @@ EXT_CLASS_COMMAND(KernelMode, kd_process, "", "{;ed,o;eprocess;;}")
 	for (auto it : threads)
 	{
 		dprintf(" Thread: %d(0x%x), EThread: ", it->Tid(), it->Tid());
-		Dml(" [%08x] <link cmd=\"!kd_thread %I64x\">%I64x</link>\n", it->Ethread(), it->Ethread());
+		Dml("<link cmd=\"!kd_thread %I64x\">%I64x</link>\n", it->Ethread(), it->Ethread());
 	}
 	dprintf("\n");
 
@@ -87,7 +87,7 @@ EXT_CLASS_COMMAND(KernelMode, kd_thread, "", "{;ed,o;ethread;;}")
 	for (auto it : threads)
 	{
 		dprintf(" Thread: %d(0x%x), EThread: ", it->Tid(), it->Tid());
-		Dml(" [%08x] <link cmd=\"!kd_thread %I64x\">%I64x</link>   ", it->Ethread(), it->Ethread());
+		Dml("<link cmd=\"!kd_thread %I64x\">%I64x</link>   ", it->Ethread(), it->Ethread());
 
 		if (it->Ethread() == ethread)
 		{
@@ -137,7 +137,7 @@ EXT_CLASS_COMMAND(KernelMode, queryvm, "", "{;ed,o;ptr;;}")
 			dprintf("Region Size: %0*I64x\n", 16, mbi.RegionSize);
 			dprintf("State: <Unknown>\n");
 			dprintf("Protect: <Unknown>\n");
-			dprintf("Type : ");
+			dprintf("Type: ");
 			switch (mbi.Type)
 			{
 			case MEM_IMAGE:
@@ -218,5 +218,6 @@ EXT_CLASS_COMMAND(KernelMode, current, "", "{;ed,o;ptr;;}")
 		return;
 	}
 
+	dprintf("\n");
 	dprintf(" EProcess context=>%I64x\n", _eprocess);
 }

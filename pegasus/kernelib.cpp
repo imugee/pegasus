@@ -297,13 +297,12 @@ std::wstring WindbgProcess::GetModuleName(unsigned long long ptr, bool path)
 	if (ldr_node.GetUlong64())
 	{
 		ExtRemoteTyped InLoadOrderModuleList = ldr_node.Field("InLoadOrderModuleList");
+		unsigned long long first = InLoadOrderModuleList.Field("Flink").GetUlong64();
 		do
 		{
 			unsigned long long flink = InLoadOrderModuleList.Field("Flink").GetUlong64();
 			ExtRemoteTyped current = ExtRemoteTyped("(nt!_LDR_DATA_TABLE_ENTRY*)@$extin", flink);
 			unsigned long long dll_base = current.Field("DllBase").GetUlong64();
-			//ExtRemoteTyped bug = current.Field("SizeOfImage");
-			//unsigned long dll_size = bug.GetUlong();
 			unsigned long long dll_end = dll_base + current.Field("SizeOfImage").GetUlong();
 
 			wchar_t dll_name[MAX_PATH] = { 0, };
@@ -316,8 +315,16 @@ std::wstring WindbgProcess::GetModuleName(unsigned long long ptr, bool path)
 			{
 				buffer = current.Field("BaseDllName").Field("Buffer").GetUlong64();
 			}
+
+			//dprintf("test:: %I64x %I64x\n", dll_base, dll_end);
+
 			unsigned long readn = 0;
 			if (g_Ext->m_Data4->ReadVirtual(buffer, dll_name, sizeof(dll_name), &readn) != S_OK)
+			{
+				break;
+			}
+
+			if (wcslen(dll_name) == 0)
 			{
 				break;
 			}
