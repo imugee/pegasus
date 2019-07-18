@@ -316,8 +316,6 @@ std::wstring WindbgProcess::GetModuleName(unsigned long long ptr, bool path)
 				buffer = current.Field("BaseDllName").Field("Buffer").GetUlong64();
 			}
 
-			//dprintf("test:: %I64x %I64x\n", dll_base, dll_end);
-
 			unsigned long readn = 0;
 			if (g_Ext->m_Data4->ReadVirtual(buffer, dll_name, sizeof(dll_name), &readn) != S_OK)
 			{

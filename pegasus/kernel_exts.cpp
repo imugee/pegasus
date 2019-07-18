@@ -218,6 +218,25 @@ EXT_CLASS_COMMAND(KernelMode, current, "", "{;ed,o;ptr;;}")
 		return;
 	}
 
+	WindbgProcess * process = WindbgProcess::Find(_processes, _eprocess);
+	if (!process)
+	{
+		return;
+	}
+
 	dprintf("\n");
 	dprintf(" EProcess context=>%I64x\n", _eprocess);
+	dprintf("\n");
+
+	std::vector<WindbgThread *> threads = process->Threads();
+	dprintf(" EProcess context: %s, %I64x\n", process->Name(), _eprocess);
+	dprintf(" EThread context: %I64x, Tid: %d(0x%x)\n", threads[0]->Ethread(), threads[0]->Tid(), threads[0]->Tid());
+	dprintf("\n");
+
+	for (auto it : threads)
+	{
+		dprintf(" Thread: %d(0x%x), EThread: ", it->Tid(), it->Tid());
+		Dml("<link cmd=\"!kd_thread %I64x\">%I64x</link>\n", it->Ethread(), it->Ethread());
+	}
+	dprintf("\n");
 }
