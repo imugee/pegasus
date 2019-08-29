@@ -267,7 +267,7 @@ bool WindbgProcess::QueryVirtual(unsigned long long base, MEMORY_BASIC_INFORMATI
 			mbi->AllocationBase = (void *)it->start;
 			mbi->BaseAddress = (void *)address;
 			mbi->AllocationProtect = MmProtectToValue[it->protect];
-			mbi->RegionSize = it->end - address;
+			mbi->RegionSize = (SIZE_T)(it->end - address);
 
 			if ((it->is_private) ||
 				(it->type == VadRotatePhysical))
