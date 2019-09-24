@@ -344,7 +344,7 @@ EXT_CLASS_COMMAND(WindbgEngine, refstr, "", "{;ed,o;ptr;;}")
 					XdvDisassemble(ah, it->second, dump, mn, sizeof(mn));
 
 					std::string ascii;
-					if (XdvIsAscii(str, sizeof(str), ascii))
+					if (XdvIsAscii(str, sizeof(str), ascii) && ascii.size() < 100)
 					{
 						unsigned long align = (unsigned long)(100 - strlen(mn));
 						char asm_mn[512] = { 0, };
@@ -354,7 +354,7 @@ EXT_CLASS_COMMAND(WindbgEngine, refstr, "", "{;ed,o;ptr;;}")
 					}
 
 					std::string unicode;
-					if (XdvIsUnicode(str, sizeof(str), unicode))
+					if (XdvIsUnicode(str, sizeof(str), unicode) && unicode.size() < 100)
 					{
 						unsigned long align = (unsigned long)(100 - strlen(mn));
 						char asm_mn[512] = { 0, };

@@ -17,10 +17,31 @@
 
 #pragma comment(lib, "dbgeng.lib")
 
+//
+void InitHlpr()
+{
+	IObject * arch = __add_object(x86Architecture);
+	if (arch)
+	{
+		XdvSetArchitectureHandle(arch);
+	}
+	__add_object(x64Architecture);
+	__add_object(DbgEngSystem);
+
+	IObject * emulator = __add_object(Emulator);
+	if (emulator)
+	{
+		XdvSetParserHandle(emulator);
+	}
+}
+
+//
 WindbgEngine g_windbg_engine;
 ExtExtension* g_ExtInstancePtr = &g_windbg_engine;
 
-WindbgEngine::WindbgEngine() {}
+WindbgEngine::WindbgEngine() 
+{
+}
 
 HRESULT WindbgEngine::Initialize()
 {
@@ -38,19 +59,7 @@ HRESULT WindbgEngine::Initialize()
 	dprintf(" *                                                                           *\n");
 	dprintf(" *****************************************************************************\n");
 
-	IObject * arch = __add_object(x86Architecture);
-	if (arch)
-	{
-		XdvSetArchitectureHandle(arch);
-	}
-	__add_object(x64Architecture);
-	__add_object(DbgEngSystem);
+	InitHlpr();
 
-	IObject * emulator = __add_object(Emulator);
-	if (emulator)
-	{
-		XdvSetParserHandle(emulator);
-	}
 	return S_OK;
 }
-

@@ -23,11 +23,11 @@ x64Architecture::x64Architecture()
 	}
 
 	//
-	ks_err ke = ks_open(KS_ARCH_X86, KS_MODE_64, &ks_handle_);
-	if (ke)
-	{
-		ks_handle_ = nullptr;
-	}
+	//ks_err ke = ks_open(KS_ARCH_X86, KS_MODE_64, &ks_handle_);
+	//if (ke)
+	//{
+	//	ks_handle_ = nullptr;
+	//}
 
 	arch_type_ = xdv::object::id::XENOM_X64_ANALYZER_OBJECT;
 	//mutex_ = CreateMutex(nullptr, FALSE, X86_ARCH_MUTEX_NAME);
@@ -180,25 +180,25 @@ unsigned long long x64Architecture::Assemble(unsigned char *dump, size_t *insn_s
 {
 	mutex_.lock();
 
-	if (!ks_handle_)
-	{
-		mutex_.unlock();
-		return 0;
-	}
+	//if (!ks_handle_)
+	//{
+	//	mutex_.unlock();
+	//	return 0;
+	//}
 
-	memset(dump, 0, 16);
-	*insn_size = 0;
+	//memset(dump, 0, 16);
+	//*insn_size = 0;
 
-	size_t count = 0;
-	unsigned char *encode;
-	if (ks_asm(ks_handle_, mnemonic, 0, &encode, insn_size, &count))
-	{
-		mutex_.unlock();
-		return 0;
-	}
-	memcpy(dump, encode, *insn_size);
+	//size_t count = 0;
+	//unsigned char *encode;
+	//if (ks_asm(ks_handle_, mnemonic, 0, &encode, insn_size, &count))
+	//{
+	//	mutex_.unlock();
+	//	return 0;
+	//}
+	//memcpy(dump, encode, *insn_size);
 
-	ks_free(encode);
+	//ks_free(encode);
 	mutex_.unlock();
 
 	return 1;
@@ -305,7 +305,6 @@ bool x64Architecture::check_ptr(xdv_handle ih, unsigned long long ptr)
 
 void x64Architecture::FindReferenceValue(xdv_handle ih, unsigned long long base, size_t size, ref_callback_type cb, void *cb_ctx)
 {
-	MessageBox(nullptr, L"64", L"", MB_OK);
 	unsigned char *dump = (unsigned char *)malloc(size);
 	if (!dump)
 	{

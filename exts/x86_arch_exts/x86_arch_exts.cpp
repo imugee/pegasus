@@ -35,22 +35,22 @@ x86Architecture::x86Architecture()
 	}
 
 	//
-	ks_err ke = ks_open(KS_ARCH_X86, KS_MODE_32, &ks_x86_handle_);
-	if (ke)
-	{
-		ks_x86_handle_ = nullptr;
-	}
+	//ks_err ke = ks_open(KS_ARCH_X86, KS_MODE_32, &ks_x86_handle_);
+	//if (ke)
+	//{
+	//	ks_x86_handle_ = nullptr;
+	//}
 
-	ke = ks_open(KS_ARCH_X86, KS_MODE_64, &ks_x64_handle_);
-	if (ke)
-	{
-		ks_x64_handle_ = nullptr;
-	}
+	//ke = ks_open(KS_ARCH_X86, KS_MODE_64, &ks_x64_handle_);
+	//if (ke)
+	//{
+	//	ks_x64_handle_ = nullptr;
+	//}
 
 	cs_handle_ = cs_x86_handle_;
 	insn_ = x86_insn_;
 
-	ks_handle_ = ks_x86_handle_;
+	//ks_handle_ = ks_x86_handle_;
 
 	arch_type_ = xdv::object::id::XENOM_X86_ANALYZER_OBJECT;
 	mutex_ = CreateMutex(nullptr, FALSE, X86_ARCH_MUTEX_NAME);
@@ -224,37 +224,37 @@ unsigned long long x86Architecture::Disassemble(unsigned long long ptr, unsigned
 
 unsigned long long x86Architecture::Assemble(unsigned char *dump, size_t *insn_size, char *mnemonic)
 {
-	WaitForSingleObject(mutex_, INFINITE);
+	//WaitForSingleObject(mutex_, INFINITE);
 
-	if (arch_type_ == xdv::object::id::XENOM_X86_ANALYZER_OBJECT)
-	{
-		ks_handle_ = ks_x86_handle_;
-	}
-	else
-	{
-		ks_handle_ = ks_x64_handle_;
-	}
+	////if (arch_type_ == xdv::object::id::XENOM_X86_ANALYZER_OBJECT)
+	////{
+	////	ks_handle_ = ks_x86_handle_;
+	////}
+	////else
+	////{
+	////	ks_handle_ = ks_x64_handle_;
+	////}
 
-	if (!ks_handle_)
-	{
-		ReleaseMutex(mutex_);
-		return 0;
-	}
+	////if (!ks_handle_)
+	////{
+	////	ReleaseMutex(mutex_);
+	////	return 0;
+	////}
 
-	memset(dump, 0, 16);
-	*insn_size = 0;
+	//memset(dump, 0, 16);
+	//*insn_size = 0;
 
-	size_t count = 0;
-	unsigned char *encode;
-	if (ks_asm(ks_handle_, mnemonic, 0, &encode, insn_size, &count))
-	{
-		ReleaseMutex(mutex_);
-		return 0;
-	}
-	memcpy(dump, encode, *insn_size);
+	//size_t count = 0;
+	//unsigned char *encode;
+	//if (ks_asm(ks_handle_, mnemonic, 0, &encode, insn_size, &count))
+	//{
+	//	ReleaseMutex(mutex_);
+	//	return 0;
+	//}
+	//memcpy(dump, encode, *insn_size);
 
-	ks_free(encode);
-	ReleaseMutex(mutex_);
+	//ks_free(encode);
+	//ReleaseMutex(mutex_);
 
 	return 1;
 }
@@ -362,7 +362,6 @@ bool x86Architecture::check_ptr(xdv_handle ih, unsigned long long ptr)
 
 void x86Architecture::FindReferenceValue(xdv_handle ih, unsigned long long base, size_t size, ref_callback_type cb, void *cb_ctx)
 {
-	MessageBox(nullptr, L"86", L"", MB_OK);
 	unsigned char *dump = (unsigned char *)malloc(size);
 	if (!dump)
 	{

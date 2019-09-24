@@ -22,7 +22,7 @@ private:
 	std::mutex mutex_;
 
 private:
-	ks_engine *ks_handle_;
+	//ks_engine *ks_handle_;
 
 	xdv::object::id arch_type_;
 

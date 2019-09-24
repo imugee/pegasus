@@ -29,9 +29,9 @@ private:
 	HANDLE mutex_;
 
 private:
-	ks_engine *ks_handle_;
-	ks_engine *ks_x86_handle_;
-	ks_engine *ks_x64_handle_;
+	//ks_engine *ks_handle_;
+	//ks_engine *ks_x86_handle_;
+	//ks_engine *ks_x64_handle_;
 
 	xdv::object::id arch_type_;
 
